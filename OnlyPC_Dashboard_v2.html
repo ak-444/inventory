@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONLY@PC — Inventory System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #07090f;
+  --bg2: #0d1117;
+  --surface: #111827;
+  --surface2: #1a2333;
+  --border: #1f2d3d;
+  --border2: #263547;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59,130,246,0.15);
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #4b6080;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+button{cursor:pointer;font-family:var(--sans)}
+input,select{font-family:var(--sans)}
+
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+#login-screen {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 20%, rgba(6,182,212,0.05) 0%, transparent 50%),
+              var(--bg);
+}
+.login-box {
+  width:400px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:40px;
+  box-shadow: 0 0 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.1);
+}
+.login-logo {
+  text-align:center;
+  margin-bottom:32px;
+}
+.login-logo .brand {
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:3px;
+  color:var(--text);
+}
+.login-logo .brand span { color:var(--accent); }
+.login-logo .sub {
+  font-size:11px;
+  color:var(--text3);
+  font-family:var(--mono);
+  letter-spacing:2px;
+  margin-top:4px;
+}
+.login-title {
+  font-size:14px;
+  font-weight:600;
+  color:var(--text2);
+  margin-bottom:20px;
+  text-align:center;
+}
+.login-field { margin-bottom:16px; }
+.login-field label {
+  display:block;
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--text3);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+.login-field input {
+  width:100%;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 14px;
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  transition:border-color 0.2s;
+}
+.login-field input:focus { border-color:var(--accent); }
+.login-btn {
+  width:100%;
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:12px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:1px;
+  margin-top:8px;
+  transition:all 0.2s;
+}
+.login-btn:hover { background:#2563eb; box-shadow:0 0 20px rgba(59,130,246,0.3); }
+.login-error {
+  background:rgba(239,68,68,0.1);
+  border:1px solid rgba(239,68,68,0.3);
+  border-radius:6px;
+  padding:10px 14px;
+  font-size:12px;
+  color:var(--red);
+  margin-bottom:16px;
+  display:none;
+}
+.login-hint {
+  margin-top:20px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--text3);
+  text-align:center;
+  line-height:1.8;
+}
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+#app { display:none; flex-direction:column; height:100vh; }
+
+/* TOPBAR */
+.topbar {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  position:relative;
+  z-index:50;
+}
+.topbar-left { display:flex;align-items:center;gap:20px; }
+.brand-mark {
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:2px;
+}
+.brand-mark span { color:var(--accent); }
+.topbar-nav { display:flex;gap:4px; }
+.nav-btn {
+  padding:6px 14px;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:600;
+  border:none;
+  background:transparent;
+  color:var(--text3);
+  transition:all 0.15s;
+  letter-spacing:0.5px;
+}
+.nav-btn:hover { background:var(--surface2);color:var(--text); }
+.nav-btn.active { background:var(--accent-glow);color:var(--accent); }
+
+.topbar-right { display:flex;align-items:center;gap:12px; }
+.user-chip {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:5px 12px 5px 6px;
+  font-size:12px;
+}
+.user-avatar {
+  width:26px;height:26px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;
+  font-weight:700;
+  color:#fff;
+}
+.avatar-admin { background:linear-gradient(135deg,var(--accent),var(--purple)); }
+.avatar-staff { background:linear-gradient(135deg,var(--green),var(--cyan)); }
+.user-name { font-weight:600; }
+.user-role {
+  font-size:10px;
+  font-family:var(--mono);
+  color:var(--text3);
+  background:var(--bg);
+  padding:2px 6px;
+  border-radius:4px;
+  border:1px solid var(--border);
+}
+.logout-btn {
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text3);
+  border-radius:6px;
+  padding:5px 10px;
+  font-size:11px;
+  transition:all 0.15s;
+}
+.logout-btn:hover { border-color:var(--red);color:var(--red); }
+
+.live-badge {
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--text3);
+}
+.live-dot {
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* MAIN CONTENT */
+.main-content {
+  flex:1;
+  overflow-y:auto;
+  padding:24px;
+}
+.main-content::-webkit-scrollbar{width:4px}
+.main-content::-webkit-scrollbar-track{background:var(--bg)}
+.main-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* PAGE */
+.page { display:none; }
+.page.active { display:block; }
+
+/* ═══════════════════════════════════════
+   UPLOAD PAGE (DIANE)
+═══════════════════════════════════════ */
+#upload-page {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient(ellipse at 50% 30%, rgba(16,185,129,0.06) 0%, transparent 60%), var(--bg);
+}
+.upload-container { width:520px; }
+.upload-header { text-align:center;margin-bottom:32px; }
+.upload-header .brand {font-size:22px;font-weight:800;letter-spacing:2px;}
+.upload-header .brand span{color:var(--green);}
+.upload-header .greeting {
+  font-size:24px;font-weight:700;margin-top:16px;margin-bottom:6px;
+}
+.upload-header .sub {font-size:13px;color:var(--text2);}
+
+.upload-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px;
+}
+.dropzone {
+  border:2px dashed var(--border2);
+  border-radius:12px;
+  padding:48px 32px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  background:var(--bg2);
+  position:relative;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color:var(--green);
+  background:rgba(16,185,129,0.05);
+}
+.dropzone-icon { font-size:40px;margin-bottom:12px; }
+.dropzone-text { font-size:15px;font-weight:600;margin-bottom:6px; }
+.dropzone-sub { font-size:12px;color:var(--text2); }
+.dropzone input[type=file] {
+  position:absolute;inset:0;opacity:0;cursor:pointer;
+}
+.upload-action-btn {
+  width:100%;
+  margin-top:20px;
+  background:var(--green);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  padding:14px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:1px;
+  transition:all 0.2s;
+  display:none;
+}
+.upload-action-btn:hover { background:#059669;box-shadow:0 0 20px rgba(16,185,129,0.3); }
+.upload-action-btn.visible { display:block; }
+
+.upload-progress {
+  display:none;
+  margin-top:20px;
+}
+.progress-step {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  font-size:13px;
+  color:var(--text2);
+  border-bottom:1px solid var(--border);
+}
+.progress-step:last-child{border:none}
+.step-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.step-pending{background:var(--surface2);color:var(--text3)}
+.step-active{background:var(--accent);color:#fff;animation:spin 1s linear infinite}
+.step-done{background:var(--green);color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.upload-success {
+  display:none;
+  text-align:center;
+  padding:24px;
+}
+.success-icon{font-size:48px;margin-bottom:12px}
+.success-text{font-size:18px;font-weight:700;color:var(--green);margin-bottom:6px}
+.success-sub{font-size:13px;color:var(--text2)}
+.upload-history {
+  margin-top:24px;
+  border-top:1px solid var(--border);
+  padding-top:20px;
+}
+.upload-history-title {
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--text3);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:12px;
+}
+.history-item {
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid var(--border);
+  font-size:12px;
+}
+.history-item:last-child{border:none}
+.history-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.history-file{flex:1;color:var(--text)}
+.history-time{color:var(--text3);font-family:var(--mono);font-size:11px}
+
+/* ═══════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════ */
+.page-header {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;
+}
+.page-title { font-size:20px;font-weight:700; }
+.page-sub { font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2px; }
+.date-badge {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 14px;
+  font-size:12px;
+  font-family:var(--mono);
+  color:var(--text2);
+}
+
+/* KPI CARDS */
+.kpi-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:24px;
+}
+.kpi-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+  overflow:hidden;
+}
+.kpi-card::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  opacity:0;
+  transition:opacity 0.2s;
+  border-radius:12px;
+}
+.kpi-card:hover { transform:translateY(-2px);border-color:var(--border2); }
+.kpi-card.active { border-color:var(--kpi-color,var(--accent)) !important; box-shadow:0 0 0 1px var(--kpi-color,var(--accent)), 0 8px 32px rgba(0,0,0,0.3); }
+.kpi-card.active::after { background:radial-gradient(circle at top right, var(--kpi-color,var(--accent)), transparent 70%); opacity:0.06; }
+.kpi-glow {
+  position:absolute;
+  top:-20px;right:-20px;
+  width:80px;height:80px;
+  border-radius:50%;
+  opacity:0.06;
+  transition:opacity 0.2s;
+}
+.kpi-card:hover .kpi-glow, .kpi-card.active .kpi-glow { opacity:0.12; }
+.kpi-label {
+  font-size:10px;
+  font-family:var(--mono);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:var(--text3);
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.kpi-icon { font-size:12px; }
+.kpi-value {
+  font-size:36px;
+  font-weight:800;
+  line-height:1;
+  margin-bottom:6px;
+  font-family:var(--mono);
+}
+.kpi-sub { font-size:11px;color:var(--text3); }
+.kpi-click-hint {
+  position:absolute;
+  bottom:10px;right:12px;
+  font-size:10px;
+  font-family:var(--mono);
+  color:var(--text3);
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.kpi-card:hover .kpi-click-hint { opacity:1; }
+
+/* DASHBOARD GRID */
+.dash-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+.dash-grid-3 {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+.span-2 { grid-column:span 2; }
+
+/* CARDS */
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+}
+.card-head {
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface2);
+}
+.card-title {
+  font-size:11px;
+  font-family:var(--mono);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:var(--text2);
+  display:flex;align-items:center;gap:8px;
+}
+.card-title-dot {
+  width:6px;height:6px;border-radius:50%;
+}
+.card-body { padding:16px; }
+
+/* TABLE */
+.tbl { width:100%;border-collapse:collapse; }
+.tbl th {
+  text-align:left;padding:8px 10px;
+  font-size:10px;font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:1px;
+  color:var(--text3);
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+  position:sticky;top:0;
+}
+.tbl td {
+  padding:8px 10px;
+  border-bottom:1px solid rgba(31,45,61,0.5);
+  font-size:12px;
+}
+.tbl tr:hover td { background:rgba(59,130,246,0.04); }
+.tbl .mono { font-family:var(--mono); }
+.tbl .r { text-align:right; }
+.tbl-scroll { max-height:380px;overflow-y:auto; }
+.tbl-scroll::-webkit-scrollbar{width:3px}
+.tbl-scroll::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* BADGES */
+.badge {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:4px;
+  font-size:10px;font-family:var(--mono);font-weight:600;
+}
+.badge-fast { background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.2); }
+.badge-aging { background:rgba(245,158,11,0.12);color:var(--yellow);border:1px solid rgba(245,158,11,0.2); }
+.badge-consign { background:rgba(139,92,246,0.12);color:var(--purple);border:1px solid rgba(139,92,246,0.2); }
+.badge-danger { background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.2); }
+.badge-info { background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.2); }
+
+/* ALERT ROWS */
+.alert-row {
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;margin-bottom:6px;
+  font-size:12px;border-left:3px solid;
+}
+.alert-critical { background:rgba(239,68,68,0.07);border-color:var(--red); }
+.alert-low { background:rgba(245,158,11,0.07);border-color:var(--yellow); }
+.alert-name { flex:1;font-weight:500; }
+.alert-qty { font-family:var(--mono);font-weight:700;font-size:14px; }
+
+/* STOCK BAR */
+.sbar-wrap { width:60px;height:4px;background:var(--border);border-radius:2px;display:inline-block;vertical-align:middle; }
+.sbar { height:100%;border-radius:2px;transition:width 0.3s; }
+
+/* SEARCH */
+.search-box {
+  position:relative;display:flex;align-items:center;
+}
+.search-box input {
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:7px;
+  color:var(--text);
+  padding:6px 10px 6px 30px;
+  font-size:12px;
+  width:190px;outline:none;
+  transition:border-color 0.2s;
+}
+.search-box input:focus { border-color:var(--accent); }
+.search-box::before {
+  content:'⌕';position:absolute;left:9px;
+  color:var(--text3);font-size:14px;pointer-events:none;
+}
+
+/* CHART */
+.chart-wrap { position:relative;height:210px; }
+.chart-wrap-sm { position:relative;height:180px; }
+
+/* TREND BTNS */
+.trend-pills { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px; }
+.trend-pill {
+  padding:3px 9px;border-radius:4px;font-size:10px;
+  font-family:var(--mono);cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);color:var(--text3);
+  transition:all 0.15s;white-space:nowrap;max-width:160px;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.trend-pill.active { border-color:var(--cyan);color:var(--cyan);background:rgba(6,182,212,0.08); }
+
+/* SELECT */
+.filter-select {
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;border-radius:6px;
+  font-size:11px;font-family:var(--mono);outline:none;
+  cursor:pointer;
+}
+
+/* CAT BARS */
+.cat-row { display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:12px; }
+.cat-lbl { width:110px;color:var(--text2);flex-shrink:0;font-size:11px; }
+.cat-track { flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden; }
+.cat-fill { height:100%;border-radius:3px; }
+.cat-num { font-family:var(--mono);color:var(--text3);width:28px;text-align:right;font-size:11px; }
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-overlay {
+  position:fixed;inset:0;
+  background:rgba(7,9,15,0.85);
+  backdrop-filter:blur(6px);
+  z-index:200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  width:100%;max-width:780px;
+  max-height:82vh;
+  display:flex;flex-direction:column;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6);
+  animation:modal-in 0.2s ease;
+}
+@keyframes modal-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.modal-head {
+  padding:18px 22px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-shrink:0;
+}
+.modal-title { font-size:16px;font-weight:700; }
+.modal-sub { font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:3px; }
+.modal-close {
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);border-radius:7px;
+  padding:6px 10px;font-size:13px;transition:all 0.15s;
+}
+.modal-close:hover { border-color:var(--red);color:var(--red); }
+.modal-body { padding:20px 22px;overflow-y:auto;flex:1; }
+.modal-body::-webkit-scrollbar{width:3px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--border)}
+.modal-stats {
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;
+}
+.modal-stat {
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:14px;text-align:center;
+}
+.modal-stat-val { font-size:24px;font-weight:700;font-family:var(--mono);margin-bottom:4px; }
+.modal-stat-lbl { font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px; }
+.modal-search {
+  margin-bottom:14px;display:flex;gap:10px;
+}
+.modal-search input {
+  flex:1;background:var(--bg);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);padding:8px 12px;font-size:12px;outline:none;
+}
+.modal-search input:focus { border-color:var(--accent); }
+
+/* ═══════════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════════ */
+.section-lbl {
+  font-family:var(--mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:2px;color:var(--text3);
+  margin:20px 0 12px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-lbl::after { content:'';flex:1;height:1px;background:var(--border); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">ONLY<span>@PC</span></div>
+      <div class="sub">INVENTORY MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="login-title">Sign in to continue</div>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">SIGN IN</button>
+    <div class="login-hint">
+      <strong>Joseph (Admin):</strong> joseph / admin123<br>
+      <strong>Diane (Staff):</strong> diane / staff123
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="app">
+
+  <!-- TOPBAR (hidden for Diane) -->
+  <div class="topbar" id="topbar">
+    <div class="topbar-left">
+      <div class="brand-mark">ONLY<span>@PC</span></div>
+      <nav class="topbar-nav" id="admin-nav">
+        <button class="nav-btn active" onclick="showPage('dashboard',this)">Dashboard</button>
+        <button class="nav-btn" onclick="showPage('inventory',this)">Inventory</button>
+        <button class="nav-btn" onclick="showPage('desktop',this)">Desktop Parts</button>
+        <button class="nav-btn" onclick="showPage('trends',this)">Trends</button>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <span id="clock"></span>
+      </div>
+      <div class="user-chip" id="user-chip">
+        <div class="user-avatar" id="user-avatar"></div>
+        <span class="user-name" id="user-name-display"></span>
+        <span class="user-role" id="user-role-display"></span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content" id="main-content">
+
+    <!-- ── DIANE UPLOAD PAGE ── -->
+    <div id="upload-page" style="display:none;min-height:calc(100vh - 56px);display:none;align-items:center;justify-content:center;flex-direction:column;padding:40px">
+      <div class="upload-container">
+        <div class="upload-header">
+          <div class="brand">ONLY<span style="color:var(--green)">@PC</span></div>
+          <div class="greeting">Good day, Diane! 👋</div>
+          <div class="sub">Upload today's inventory export to update the dashboard.</div>
+        </div>
+        <div class="upload-card">
+          <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
+            <div class="dropzone-icon" id="dz-icon">📂</div>
+            <div class="dropzone-text" id="dz-text">Drop your inventory file here</div>
+            <div class="dropzone-sub" id="dz-sub">or click to browse — accepts .xlsx, .xls, .csv</div>
+          </div>
+          <button class="upload-action-btn" id="upload-btn" onclick="startUpload()">⬆ UPLOAD & UPDATE INVENTORY</button>
+          <div class="upload-progress" id="upload-progress">
+            <div class="progress-step" id="step1">
+              <div class="step-icon step-pending" id="step1-icon">1</div>
+              <span>Reading file...</span>
+            </div>
+            <div class="progress-step" id="step2">
+              <div class="step-icon step-pending" id="step2-icon">2</div>
+              <span>Parsing inventory data...</span>
+            </div>
+            <div class="progress-step" id="step3">
+              <div class="step-icon step-pending" id="step3-icon">3</div>
+              <span>Classifying SKUs...</span>
+            </div>
+            <div class="progress-step" id="step4">
+              <div class="step-icon step-pending" id="step4-icon">4</div>
+              <span>Updating dashboard...</span>
+            </div>
+          </div>
+          <div class="upload-success" id="upload-success">
+            <div class="success-icon">✅</div>
+            <div class="success-text">Inventory Updated!</div>
+            <div class="success-sub">Joseph's dashboard now reflects the latest data.</div>
+            <button onclick="resetUpload()" style="margin-top:16px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:10px 20px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer">Upload Another File</button>
+          </div>
+          <div class="upload-history">
+            <div class="upload-history-title">Recent Uploads</div>
+            <div id="upload-history-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN PAGES ── -->
+    <div id="admin-pages" style="display:none">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Inventory Overview</div>
+            <div class="page-sub">2021 ONLY@PC GILMORE COMPUTER CENTER INC</div>
+          </div>
+          <div class="date-badge">📅 March 3, 2026 &nbsp;|&nbsp; <span id="dash-clock"></span></div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--kpi-color:#3b82f6" onclick="openKPIModal('all')">
+            <div class="kpi-glow" style="background:#3b82f6"></div>
+            <div class="kpi-label"><span class="kpi-icon">📦</span> Total SKUs</div>
+            <div class="kpi-value" style="color:#3b82f6" id="kpi-total">437</div>
+            <div class="kpi-sub">unique products tracked</div>
+            <div class="kpi-click-hint">click to view all →</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:#10b981" onclick="openKPIModal('fast')">
+            <div class="kpi-glow" style="background:#10b981"></div>
+            <div class="kpi-label"><span class="kpi-icon">⚡</span> Fast Moving</div>
+            <div class="kpi-value" style="color:#10b981" id="kpi-fast">—</div>
+            <div class="kpi-sub">common items in stock</div>
+            <div class="kpi-click-hint">click to view →</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:#f59e0b" onclick="openKPIModal('restock')">
+            <div class="kpi-glow" style="background:#f59e0b"></div>
+            <div class="kpi-label"><span class="kpi-icon">⚠️</span> Needs Restock</div>
+            <div class="kpi-value" style="color:#f59e0b" id="kpi-restock">—</div>
+            <div class="kpi-sub">fast-moving ≤ 5 units</div>
+            <div class="kpi-click-hint">click to view →</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:#f59e0b" onclick="openKPIModal('aging')">
+            <div class="kpi-glow" style="background:#8b5cf6"></div>
+            <div class="kpi-label"><span class="kpi-icon">🕰️</span> Aging Items</div>
+            <div class="kpi-value" style="color:#8b5cf6" id="kpi-aging">—</div>
+            <div class="kpi-sub">slow-moving inventory</div>
+            <div class="kpi-click-hint">click to view →</div>
+          </div>
+        </div>
+
+        <div class="section-lbl">ALERTS</div>
+        <div class="dash-grid" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>Critical — Out of Stock</span>
+              <span class="badge badge-danger" id="out-badge">0</span>
+            </div>
+            <div class="card-body" id="critical-panel" style="max-height:220px;overflow-y:auto"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title"><span class="card-title-dot" style="background:var(--yellow)"></span>Low Stock — Fast Moving</span>
+              <span class="badge badge-aging" id="low-badge">0</span>
+            </div>
+            <div class="card-body" id="low-panel" style="max-height:220px;overflow-y:auto"></div>
+          </div>
+        </div>
+
+        <div class="section-lbl">ANALYTICS</div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title"><span class="card-title-dot" style="background:var(--cyan)"></span>Stock Trend</span>
+            </div>
+            <div class="card-body">
+              <div class="trend-pills" id="dash-trend-pills"></div>
+              <div class="chart-wrap"><canvas id="dashTrendChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title"><span class="card-title-dot" style="background:var(--purple)"></span>By Category</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap-sm"><canvas id="catChart"></canvas></div>
+              <div style="margin-top:12px" id="cat-bars-div"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY PAGE -->
+      <div class="page" id="page-inventory">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Full Inventory</div>
+            <div class="page-sub">All <span id="inv-count">437</span> SKUs — search, filter, sort</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div class="search-box">
+              <input type="text" id="inv-search" placeholder="Search item..." onkeyup="filterInvTable()">
+            </div>
+            <select class="filter-select" id="inv-status" onchange="filterInvTable()">
+              <option value="">All Status</option>
+              <option value="COMMON ITEM FAST MOVING">Fast Moving</option>
+              <option value="AGING ITEM">Aging</option>
+              <option value="CONSIGNMENT">Consignment</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tbl-scroll">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th class="r">On Hand</th>
+                  <th class="r">Available</th>
+                  <th class="r">Committed</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP PARTS PAGE -->
+      <div class="page" id="page-desktop">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Desktop Parts & Must-Carry SKUs</div>
+            <div class="page-sub">CPU · GPU · RAM · SSD · Motherboard · Case · PSU</div>
+          </div>
+          <div class="search-box">
+            <input type="text" id="desk-search" placeholder="Search desktop parts..." onkeyup="filterDeskTable()">
+          </div>
+        </div>
+        <div class="card">
+          <div class="tbl-scroll" style="max-height:calc(100vh - 200px)">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th class="r">On Hand</th>
+                  <th class="r">Available</th>
+                  <th class="r">Committed</th>
+                  <th>Stock Level</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="desk-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRENDS PAGE -->
+      <div class="page" id="page-trends">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Stock Trends</div>
+            <div class="page-sub">Historical on-hand movement across all snapshots</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Select Item to Track</span>
+          </div>
+          <div class="card-body">
+            <div class="trend-pills" id="trends-pills"></div>
+            <div style="position:relative;height:320px"><canvas id="fullTrendChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /admin-pages -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- ═══════════ KPI MODAL ═══════════ -->
+<div class="modal-overlay" id="kpi-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modal-title">Items</div>
+        <div class="modal-sub" id="modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stats" id="modal-stats"></div>
+      <div class="modal-search">
+        <input type="text" id="modal-search-input" placeholder="Search in this list..." onkeyup="filterModalTable()">
+        <select class="filter-select" id="modal-sort" onchange="filterModalTable()" style="width:auto">
+          <option value="onhand-desc">On Hand ↓</option>
+          <option value="onhand-asc">On Hand ↑</option>
+          <option value="name">Name A-Z</option>
+          <option value="avail-asc">Available ↑</option>
+        </select>
+      </div>
+      <div class="tbl-scroll" style="max-height:400px">
+        <table class="tbl" style="width:100%">
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th class="r">On Hand</th>
+              <th class="r">Available</th>
+              <th class="r">Committed</th>
+              <th>Stock</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="modal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════ DATA ═══════════════════════
+const RAW = {"sheet_labels": [2, 9, 17, 25, 33, 41, 49, 57, 65, 73, 81, 89, 97, 105, 113, 121, 129, 137, 145, 153, 161, 169, 177, 185, 193, 201, 209, 215], "desktop_items": [{"Item Name": "LEXAR 8GB 2666 DDR4", "On Hand": 77, "Available": 45, "Committed": 32, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMDRYZEN ORIGINAL HEATSINKFAN", "On Hand": 36, "Available": 36, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "KINGSTON KF432C16BB/8 RAM", "On Hand": 27, "Available": 27, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN ORIGINAL HEATSINKFAN", "On Hand": 21, "Available": 21, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI PRO H610M-S DDR4", "On Hand": 20, "Available": 18, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE ULTRA 5 225 LGA1851", "On Hand": 18, "Available": 18, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR NM620 256GB M.2 SSD", "On Hand": 16, "Available": 13, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-10105 PROCESSOR", "On Hand": 15, "Available": 0, "Committed": 15, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI RTX3070 GAMING X TRIO", "On Hand": 12, "Available": 12, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "TRANSCEND 16GB 5600 DDR5", "On Hand": 11, "Available": 11, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "YGT V100 WHITE CASE W/ PSU", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GALAX RTX3060Ti 8GB VIDEOCARD", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "AMD RYZEN 5 5600X PROCESSOR", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 3 3200G PROCESSOR", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR NQ790 1TB M.2 SSD", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 5600GT PROCESSOR", "On Hand": 8, "Available": 4, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS TUF RTX3070 8GB GAMING", "On Hand": 7, "Available": 7, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "MSI PRO B760M-A WIFI DDR4", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR THOR 16GB 3200 DDR4", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE RTX3070 8GB VIDEOCARD", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "AMD RYZEN 7 5700G PROCESSOR", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TRANSCEND 8GB 5600 DDR5", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i5-10400 PROCESSOR", "On Hand": 5, "Available": 3, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-12100 PROCESSOR", "On Hand": 5, "Available": 4, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i5-12400 PROCESSOR", "On Hand": 5, "Available": 1, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSPEC 2.5\" 480GB SSD", "On Hand": 4, "Available": 2, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COLORFUL RTX3060TI ULTRA WHITE", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "PNY RTX3060Ti 8GB VIDEOCARD", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "MSI RTX3070 VENTUS 3X OC", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "LEXAR NQ790 1TB M.2 GEN4  SSD", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TEAMGROUP MP33 PRO 1TB M.2 SSD", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI RTX 3060Ti GAMING", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GIGABYTE H610M K DDR4", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKSEMI ARMOR 8GB 3200 DDR4", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 5600 PROCESSOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKSEMI WAVE 256GB SSD SATA", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "UPHERE N10 CPU COOLER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE 2.5\" 480GB SATA SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSTON 120GB M.2 SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AMD RYZEN 7 5700X PROCESSOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG SSD 980 250GB M.2 SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "4GB DDR4 SODIMM FOR NOTEBOOK", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i7-7700 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i7-12700K PROCESSOR", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSTON NV3 500GB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INNO3D RTX3070 8GB TWIN X2 OC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "INNO3D GTX1660 SUPER 6GB 192BI", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "INPLAY S20 CPU COOLER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-7100 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 4500 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TRANSCEND ESD380C 1TB EXT SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE VISION RTX3070 8GB WH", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "ADATA LEGEND 860 2TB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA SU650 2.5\" 1TB SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA LEGEND 860 1TB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TXRUI 512GB M.2 NVME SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TXRUI 256GB M.2 NVME SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI GTX1660 SUPER VENTUS XS 6G", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GIGABYTE RTX 3070 8GB GAMING O", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GIGABYTE 2.5\" 240GB SATA SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE AORUS RTX 3070 8GB GD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GALAX RTX3070 8GB BLACK VIDEOC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GALAX RTX3070 8GB WHITE VIDEOC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "LEXAR NM710 500GB M.2 GEN4 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE H610M H V3 DDR4", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH DX360 V2.6 COOLER WH", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COLORFUL RTX3060Ti VIDEOCARD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COLORFUL IGAME RTX 3070 VULCAN", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "COLORFUL ADVANCED RTX3070 8GB", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "COLORFUL IGAME RTX3070 8GB", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "COLORFUL RTX 3050 6GB  GDDR6", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APACER 2280 GEN3 512GB M.2 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 7 9700X PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APACER 512GB M.2 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 870 EVO 2.5\" 250GB SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ZOTAC RTX3070 8GB TWIN WHITE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "256GB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}], "all_items": [{"Item Name": "RUBBERBOOTS CAT5E", "On Hand": 662, "Available": 662, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GEN CAT5E UTP CABLE/ METER", "On Hand": 462, "Available": 462, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GEN CAT6E UTP CABLE/ METER", "On Hand": 305, "Available": 305, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BNC CONNECTOR PLUG TYPE", "On Hand": 186, "Available": 186, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "RJ45 CAT5E CONNECTOR", "On Hand": 175, "Available": 175, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "C-CLAMP 20MM", "On Hand": 143, "Available": 143, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "C-CLAMP 25MM", "On Hand": 137, "Available": 137, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HID THIN CARD W/ ENCODER NUM.", "On Hand": 100, "Available": 100, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "8 CORE SINGLE MODE", "On Hand": 100, "Available": 100, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "UY CONNECTOR", "On Hand": 90, "Available": 90, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DP TO VGA ADAPTER", "On Hand": 90, "Available": 90, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DC PLUG CONNECTOR FEMALE", "On Hand": 85, "Available": 85, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AMP RJ45 CAT5E CONNECTOR", "On Hand": 84, "Available": 81, "Committed": 3, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "RJ45 COUPLER ORDINARY", "On Hand": 79, "Available": 79, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "LEXAR 8GB 2666 DDR4", "On Hand": 77, "Available": 45, "Committed": 32, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BNC CONNECTOR SCREWLESS", "On Hand": 74, "Available": 74, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "YGT MARS 8 CASING W/  PSU", "On Hand": 63, "Available": 43, "Committed": 20, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "A4TECH KRS-8372 USB KB/MOUSE", "On Hand": 61, "Available": 28, "Committed": 33, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "YGT TN20 20\" MONITOR", "On Hand": 58, "Available": 39, "Committed": 19, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PUDDING KEYCAPS", "On Hand": 49, "Available": 49, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "C-CLAMP 30MM", "On Hand": 48, "Available": 48, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "LEXAR NQ100 2.5\" 240GB SATA SS", "On Hand": 48, "Available": 21, "Committed": 27, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SWITCH PULLERS", "On Hand": 48, "Available": 48, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ARCTIC F12 PMW PST (BLACK)", "On Hand": 42, "Available": 42, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "SEAGATE EXOS 3.5\" 4TB SATA HDD", "On Hand": 39, "Available": 0, "Committed": 39, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "AMDRYZEN ORIGINAL HEATSINKFAN", "On Hand": 36, "Available": 36, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "RAZER MOUSEPAD SMALL", "On Hand": 30, "Available": 8, "Committed": 22, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ELBOW BIG", "On Hand": 28, "Available": 28, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE A520M K V2", "On Hand": 27, "Available": 23, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSTON KF432C16BB/8 RAM", "On Hand": 27, "Available": 27, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL HEATSINK FAN 10TH11THGEN", "On Hand": 26, "Available": 26, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "2GANG FACE PLATE", "On Hand": 26, "Available": 26, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ORASHARE 3000MAH MINI POWER", "On Hand": 24, "Available": 24, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS WINDOWS 11 PRO 64BIT", "On Hand": 22, "Available": 17, "Committed": 5, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN ORIGINAL HEATSINKFAN", "On Hand": 21, "Available": 21, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "RAPOO TX01 EARPHONE", "On Hand": 21, "Available": 21, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SECURE AVR 500W", "On Hand": 20, "Available": 0, "Committed": 20, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI PRO H610M-S DDR4", "On Hand": 20, "Available": 18, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADLINK C5208 DP TO HDMI 1.8M C", "On Hand": 20, "Available": 5, "Committed": 15, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DEEPCOOL GAMMAXX AG400 PLUS", "On Hand": 19, "Available": 19, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE ULTRA 5 225 LGA1851", "On Hand": 18, "Available": 18, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE H810M K", "On Hand": 18, "Available": 18, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS27F320GAEXXP 27\" MON", "On Hand": 17, "Available": 0, "Committed": 17, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ORASHARE 10000MAH POWERBANK", "On Hand": 17, "Available": 17, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR NM620 256GB M.2 SSD", "On Hand": 16, "Available": 13, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMP 2GANG FACEPLATE", "On Hand": 16, "Available": 16, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "LOGITECH H390 HEADSET", "On Hand": 15, "Available": 3, "Committed": 12, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LOGITECH C922 PRO WEBCAM", "On Hand": 15, "Available": 0, "Committed": 15, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CORSAIR CX750 750W 80PLUS BRON", "On Hand": 15, "Available": 15, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-10105 PROCESSOR", "On Hand": 15, "Available": 0, "Committed": 15, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON ODYSSEY 165-3 W/ PSU", "On Hand": 14, "Available": 14, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BIOSTAR H510MHP-E 3.0", "On Hand": 14, "Available": 3, "Committed": 11, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "USB 2.0 TO 1284 1.5M", "On Hand": 14, "Available": 14, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DEEPCOOL D-SHIELD V2 ATX CASE", "On Hand": 13, "Available": 12, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY M066 HOLLOW MOUSE WHITE", "On Hand": 13, "Available": 13, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DP TO HDMI 1.8M ADAPTER", "On Hand": 13, "Available": 13, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "RJ45 CAT6E METAL SHIELDED", "On Hand": 12, "Available": 12, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AVIATOR CABLES", "On Hand": 12, "Available": 12, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE B550M DS3H AC", "On Hand": 12, "Available": 12, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JINHUA IH580E DP CABLE 1.5M", "On Hand": 12, "Available": 12, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "MSI RTX3070 GAMING X TRIO", "On Hand": 12, "Available": 12, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "ABS KEYCAPS", "On Hand": 11, "Available": 11, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "TRANSCEND 16GB 5600 DDR5", "On Hand": 11, "Available": 11, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK ARCHER T2U AC600 USB AD", "On Hand": 10, "Available": 9, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "STEEL CLAMP LARGE", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AMP CAT5 I/O JACK", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "YGT V100 WHITE CASE W/ PSU", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON FIT FU-4BL CASING", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GALAX RTX3060Ti 8GB VIDEOCARD", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GELID GP ULTIMATE THERMAL PAD", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA UV128 64GB FLASHDRIVE", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 5600X PROCESSOR", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 3 3200G PROCESSOR", "On Hand": 10, "Available": 10, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "THERMAL PASTE SMALL", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LOGITECH H540 USB HEADSET", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "LEXAR NQ790 1TB M.2 SSD", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON LX-310 RIBBON", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "A4TECH OP-720 USB MOUSE", "On Hand": 9, "Available": 8, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY META A200 MATX BLACK CA", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HDMI CABLE 1.5M REDMESH", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY M066 HOLLOW MOUSE PINK", "On Hand": 9, "Available": 9, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "BRACKET FOR DOME METAL BIG", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COOLMAN SPECTRA LUXE ATX WHITE", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CAT5E I/O BLUE", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COOLMAN FAN 12CM SINGLE FAN", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY STX240 4 in 1 COMBO BLA", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION HDMI CABLE 1.5M BLK/Y", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MOUSEPAD BLACK EXTENDED ROG", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "EPSON L3210 PRINTER", "On Hand": 8, "Available": 7, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY GS650 650W 80PLUS BRONZ", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY M066 HOLLOW MOUSE BLACK", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AMD RYZEN 5 5600GT PROCESSOR", "On Hand": 8, "Available": 4, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA UV128 32GB FLASHDRIVE", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON ODYSSEY 165-5 W/ PSU", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON ODYSSEY 165-1", "On Hand": 8, "Available": 8, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS WINDOWS 11 PRO STICKER", "On Hand": 7, "Available": 5, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TWEAKWARE RADIANT FLUX", "On Hand": 7, "Available": 7, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ASUS TUF RTX3070 8GB GAMING", "On Hand": 7, "Available": 7, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "BIOSTAR H510MHP-E 3.0 WIFI", "On Hand": 6, "Available": 0, "Committed": 6, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI PRO B760M-A WIFI DDR4", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR THOR 16GB 3200 DDR4", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JungleLeopard Prism 4RS RGB WH", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INPLAY HN820 HEADPHONES", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE 3.5 1TB SATA HDD", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NVISION N2455 PRO 23.8\"MONITOR", "On Hand": 6, "Available": 5, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JINHUA IZ169A EXT SOUND CARD", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NVISION N2255 PRO 21.5\" IPS MO", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PBT KEYCAPS", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COOLMAN SPECTRA LUXE ATX BLACK", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COOLMAN SPECTRA M-ATX BLACK", "On Hand": 6, "Available": 6, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "USB SOUND CARD ADAPTER 7-1", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE RTX3070 8GB VIDEOCARD", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "EPSON L3250 PRINTER", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JUNCTION BOX 100x70mm", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "KINGSTON NV3 500GB M.2 NVME", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON 003 YELLOW INK", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH A305 ATX BLACK CASE", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ELECTRON 700W POWERSUPPLY", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DC PLUG CONNECTOR MALE", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 8GB 56000 SODIMM", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 7 5700G PROCESSOR", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "POLY ENCOREPRO 320 HEADSET", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "POLE MOUNT MULTI BRACKET", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "POWER TRAVEL", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "TRANSCEND 8GB 5600 DDR5", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i5-10400 PROCESSOR", "On Hand": 5, "Available": 3, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "USB EXTENSION 1.5M", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GOOJODOO FB045 SMART WATCH", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-12100 PROCESSOR", "On Hand": 5, "Available": 4, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KEYTECH ROBIN SE WHITE CASING", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INTEL CORE i5-12400 PROCESSOR", "On Hand": 5, "Available": 1, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "A4TECH HU-30 HEADSET", "On Hand": 4, "Available": -11, "Committed": 15, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER AC650 650W 80PLUS BRONZE", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION HDMI CABLE 2M 4K BLK/Y", "On Hand": 4, "Available": 1, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA TO DVI 1.5M", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CD1347G2-L DOME", "On Hand": 4, "Available": 0, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION DP TO HDMI CABLE 3M 4K", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA CABLE 1.5M", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION 1X4 HDMI SPLITTER", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JABRA HSC016  EVOLVE 20 HEADSE", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JINHUA IN010 USB HUB V2.0", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION HWI-B121H 2.8MM", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "KINGSPEC 2.5\" 480GB SSD", "On Hand": 4, "Available": 2, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LOGITECH B100 USB WIRED MS", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BROTHER LC3617 CYAN INK CARTR", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "RASURE EXTENDED MOUSEPAD RGB", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COLORFUL RTX3060TI ULTRA WHITE", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "REDRAGON GS550 ORPHEUS SPEAKER", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "POE INJECTOR", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ASUS E1404FA-NK611WSM LAPTOP", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PNY RTX3060Ti 8GB VIDEOCARD", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "EDIFIER X1 LITE BLK EARPHONE", "On Hand": 4, "Available": 3, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER AC550 550W 80PLUS BRONZE", "On Hand": 4, "Available": 1, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI RTX3070 VENTUS 3X OC", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "LEXAR NQ790 1TB M.2 GEN4  SSD", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH C6MS 3 in 1 KIT BLAC", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SECURE 650VA UPS", "On Hand": 3, "Available": 1, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TEAMGROUP MP33 PRO 1TB M.2 SSD", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BELDEN CAT6 E UTP CABLE", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "20PINS TO 24PINS ADAPTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "TENDA S108 8PORTSWITCH HUB", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "BRACKET FOR DOME PLASTIC SMALL", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "TPLINK TL-SG1024D 24PORT GIGAB", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COOLMAN SPECTRA M-ATX WHITE CA", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CANON CL-811 COLOR", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "RAPOO M10 PLUS WLESS MOUSE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK TL-WN851ND 300MBPS", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "THERMALRIGHT THERMAL PAD", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "WESTERN DIGITAL PURPLE PRO 3.5", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON L121 PRINTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON ATOM F01 SLIM CASE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ELF EARPHONE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NVISION N190HD V8 19\" MONITOR", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NVISION N2455 PRO 23.8\" MONITO", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS OFFICE PROFESSIONAL PLUS 20", "On Hand": 3, "Available": 1, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH A305 ATX WHITE CASE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI RTX 3060Ti GAMING", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "NC-FAN (INDIVIDUAL)", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DP TO DP 1.5M MINI", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE H610M K DDR4", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LOGITECH H390 USB HEADSET", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HDMI CABLE 5M H25", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION DS-2CE72HFT-F", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE76D0T-EXI 3.6M", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INPLAY NK688 MECHANICAL KEYBOA", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTERNAL CARD READER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INPLAY LITE X220 BLACK CASING", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HDMI CABLE 10M BLUEMESH", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKSEMI ARMOR 8GB 3200 DDR4", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK USB TO GIGABIT ADAPTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION HDMI CABLE 10M BLK/YEL", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA CABLE 10M", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "VENTION KQJHO WLESS PRESENTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TYPE C TO VGA ADAPTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ACRONIS TRUE IMAGE IC2019", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "A4TECH 3330N WLESS COMBO", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER PORTABLE PROJECTION SCREE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AMD RYZEN 5 5600 PROCESSOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADLINK DP TO DP 1.8M CABLE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CD2021G1-IDW1", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CD1347G0-LUF", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE70DF3T-PF", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE76D0T-EXIPF", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE56D0T-IT3F", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE16H0T-ITPF", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKSEMI WAVE 256GB SSD SATA", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION DS-2CE12KF3T BULLET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "VENTION DP TO HDMI CABLE 4K 1.", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "UPHERE N10 CPU COOLER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA CABLE 5M", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "U7- PRO CEILING MOUNTED WIFI 7", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY HG710 BLACK HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY HT220 BLACK HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS OFFICE HOME & BUSINESS 2024", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GALAX REVOLUTION-03 GAMING CAS", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE 2.5\" 480GB SATA SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FLYMAN SCREW DRIVER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MERCUSYS MR50G AC1900 GIGABIT", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MICRO USB 3.0 CABLE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "MLOONG MX301 GAMING MOUSE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE R6600XT GAMING OC 8GB", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "KINGSTON 120GB M.2 SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "LAPTOP KEYBOARD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "MSI MAG SHIELD M301 CASING", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "XIAOMI SMART BAND 9 ACTIVE", "On Hand": 2, "Available": 1, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "STEEL CLAMP SMALL", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "TPLINK EAP225-WALL OMADA", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "SECURE SS7-12 12V-7AH", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PRESTIGE COPY HOLDER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "POLY BLACKWIRE 3220 HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BROTHER LC3617 YELLOW INK CART", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CCTV ADAPTER 12V3.33A", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "CHARGING PORT TERMINAL", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "PROLINK DS-3301 IR REMOTE CONT", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ORICO 25PW1-C3-BK-EP 2.5\" ENCL", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ORASHARE HS03 HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NZXT CA-H210I-W1 H210i W/B CAS", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DVI TO VGA CABLE 1.5M", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NVISION H22V8 21.5\" MONITOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NZXT CA-H210I-B1 H210i B/B CAS", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DELI T706H 6SOCKET 5M", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DEEPCOOL MATX SMARTER CASE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CRYSTAL 2732 BINOCULAR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "CRIMPING TOOL FOR BNC", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "CORSAIR CX550 550W 80PLUS BRON", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "REDRAGON M609 PHASER GAMING MO", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AMD RYZEN 7 5700X PROCESSOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG SSD 980 250GB M.2 SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS22F320GAEXXP 22\"", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BALLPEN BALLPOINTPEN", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ARCTIC P12 PWM PST A-RGB 3PACK", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "4GANG FACE PLATE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "4GB DDR4 SODIMM FOR NOTEBOOK", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK TL-POE150S GIGABIT POE", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VIDEO BALUN 8MP CLIP TYPE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VIKINGS VKF120B FAN", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE BARRACUDA 3.5\" 2TB SAT", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA SPLITTER 4PORTS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HP SMART TANK 210 WLESS PRINTE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION DS-7604NXI-K1/4P", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA CABLE 15M", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INTEL CORE i7-7700 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i7-12700K PROCESSOR", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KD-6361M 720P CAMERA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "KASPERSKY PLUS 1U", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSTON NV3 500GB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KLEE HEADSET", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "LAPTOP BACK PACK", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION HWI-D140H 2.8MM", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INNO3D RTX3070 8GB TWIN X2 OC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "INNO3D GTX1660 SUPER 6GB 192BI", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "INPLAY ICE BAR RGB STRIP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INPLAY OPENVIEW TOWER X3 WHITE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "INPLAY S20 CPU COOLER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-7100 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION iDS-7208HUHI-MS/S", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HT-102 WALL MOUNT 26\"-63\"", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LG 32MR50C-B 32\" CURVED MONITO", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION DS-7204HUHI-K1/4S", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE56C0T-IRPF", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE76H0T-ITPF", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CD1327G0-L", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "H-21 TYPE-C TO HDMI ADAPTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GSKILL AEGIS F4-2400C17S-8GIS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE56D0T-IRPF", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "USB EXTENSION 3M", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "VENTION KBRB0 5 PORTS CABLE MA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "VENTION NYLON BRAIDED HDMI", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AEROCOOL MODERN-V", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE Z790 AORUS MASTER D5", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 4500 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TRANSCEND ESD380C 1TB EXT SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK WBS510 WLESS BASE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "HIKVISION DS-2CE10DFT-F", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE VISION RTX3070 8GB WH", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "VGA SWITCH 4PORT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AEROCOOL TOUCH-2100", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ADLINK 12CM CHASIS FAN", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ADLINK A23 HDMI TO VGA ADAPTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA LEGEND 860 2TB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA SU650 2.5\" 1TB SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AD-LINK HDMI 4K2K V2.0 CABLE 1", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ACER AL15-41P-R16X LAPTOP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA LEGEND 860 1TB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADAPTOR KPL-060F-VI", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TXRUI 512GB M.2 NVME SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TXRUI 256GB M.2 NVME SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "A4TECH HS-28 1 BLACK HEADSET", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ACER 19V-2.37A CHARGER", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE 2TB ONE TOUCH EXT. HDD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NETAC SA500 2.5\" 512GB SATA SS", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI PRO B760M-P", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NB F80 MONITOR MOUNT STAND", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MOUSEPAD EXTENDED SHORTCUT KEY", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "MS WINDOWS 11 HOME 64BIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE P550B 550W 80PLUS BRO", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI GTX1660 SUPER VENTUS XS 6G", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GIGABYTE RTX 3070 8GB GAMING O", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "MDA 3420 MOSFET", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE  GT610 LOW PROFILEUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GIGABYTE 2.5\" 240GB SATA SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE AORUS RTX 3070 8GB GD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GIGABYTE B650I AX AM5 MINI-ITX", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "GIGABYTE H510M K V2", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MINI DP TO HDMI CABLE 1.8M", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "EPSON L5290 PRINTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FORTINET FG-80F DEVICE", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FORTINET 80F 1YR UTP LICENSE F", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FANTECH GO W608 WLESS MOUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON LQ590 RIBBON", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GALAX RTX3070 8GB BLACK VIDEOC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "GALAX RTX3070 8GB WHITE VIDEOC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "KEYBOARD LAPTOP", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LAPTOP CHARGER", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LAPTOP SCREEN 14\" LED SLIM", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LCD WALL MOUNT N2", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LENOVO PU 3000 IC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LENOVO THINKCENTRE M70S", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LENOVO V15 G4 IAN LAPTOP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR NM710 500GB M.2 GEN4 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE H610M H V3 DDR4", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HP 15-FD1455TU LAPTOP-ultra 7-", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CABLE MANAGER HORIZONTAL", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ORICO AXM2-G2-GY-BP M.2 ECLOSU", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NZXT F120P 120MM WHITE SINGLE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DLINK DHP-308AV/BSG UP TO", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NOCTUA NF-P12 PWM  COOLING FAN", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "PANASONIC BL-C210 NETWORK CAM", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ORICO TYPE-C TO LAN PORT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "FISHERMALL"}, {"Item Name": "BRAND NEW RT6575DGQWRT6575D", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "PLANTRONICS M1100 HEADSET", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "BROTHER DR2560 DRUM KIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BRICK 12V/10AMP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "BROTHER LC3617 MAGENTA INK CAR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PDU 8WAYS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "PANASONIC BL-C101 NETWORK CAM", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "P2.6404.9001 BLACK", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "CCD VIDEO CAMERA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NOCTUA NF-S12A PWM CHROMAX", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NOCTUA NF-S12A PWM COOLING FAN", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DEEPCOOL THERMAL PAD EK720", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DARKFLASH C6MS 3 in 1 KIT WHIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH DX360 V2.6 COOLER WH", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DLINK DHP-308AV/BSG 500MBPS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DLINK DCS-932L IP CAMERA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NZXT 120MM LED AIRFLOW WHITE L", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "NZXT CA-H210B-W1 H210 W/B CASE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DELI UTILITY KNIFE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DEEPCOOL RF140 RGB FAN", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DC-760Z-12-6CH POWER ADAPTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "DAHUA DH-IPC-HDBW2230EN-S", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "D-TECH 6409W 9U WALLMOUNTED DA", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON FIT FH-GR CASING", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK POE150S GIGABIT POE INJ", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE 2TB ONE TOUCH EXT HDD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PROLINK PIC2001WE IP CAMERA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "PROJECTOR CEILING", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COMPUTER CHAIR C-604G CLERICAL", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COLORFUL RTX3060Ti VIDEOCARD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CORSAIR AR120 RGB WHITE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "POWERLOGIC NETWORK CABINET 27U", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CMOS BATTERY", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CISCO SG300-10 10PORT GIGABIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COLORFUL IGAME RTX 3070 VULCAN", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "COLORFUL ADVANCED RTX3070 8GB", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "CCTV AUDIO PICK UP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "CABINET TRAY", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "COLORFUL IGAME RTX3070 8GB", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "COLORFUL RTX 3050 6GB  GDDR6", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SCOUTER SCF503-W3A93", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "SCOUTER SCF132-W3A94 BULLET", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "APACER 2280 GEN3 512GB M.2 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 7 9700X PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APACER 512GB M.2 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APC BVX650I-PH 650VA UPS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "REDRAGON BS-8773 WIRELESS KB&M", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PROLINK PMW5010 BLK MOUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 4GB 2666 SODIMM", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "RJ45 CAT5E METAL SHIELDED", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "REDRAGON M609 PHASER MOUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 870 EVO 2.5\" 250GB SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS24D300GAEXXP 24\" MON", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS24D300GAEXXP 24\"", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "REACT RA 1401HD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "PROLINK PRO1201SFC-6N 1200VA U", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "XIGMATEK ATLAS VGA HOLDER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "TPLINK ARCHER TX50E AX3000 ADA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BNC TO RCA CONNECTOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AUDIO  JACK3.5 TO EXTENSION", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ASUS E1404FA-EB815SWSM LAPTOP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS PRIME H610M-E D5", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS 19V 4.74A CHARGER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ARCTIC P12 PWM PST WHITE 120MM", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "AOPEN 21.5\" 22CV1Q MONITOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ARCTIC F12 PWM PST VALUE PACK", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "SECURE 1000VA UPS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEASONIC SSR-850FM FOCUS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE SKYHAWK 3.5\" 2TB SATA", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEASONIC FOCUS GX-750 750W 80", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE ONE TOUCH 8TB HDD W/ H", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE BARRACUDA 3.5\" 4TB SAT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ZKTECO MB460 PLUS TIME&ATTENDA", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "XIAOMI G27Qi 27\" 2K GAMING MON", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "THERMAL PASTE BIG", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TENDA N300 F3 WIRELESS ROUTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "SECURE SS7-12 12V-7AH SMALL", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SOLDERING IRON TIP PASTE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "4WAY CABLE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "WITEK WI-SF105 (5PORT FE SWITC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "kVM SWITCH USB 2PORTS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ZOTAC RTX3070 8GB TWIN WHITE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "CONSIGNMENT"}, {"Item Name": "256GB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "YUNSI 34\" X340QL 170hz IPS ULT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "mINI HDMI TO VGA ADAPTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "AGING ITEM"}, {"Item Name": "ADATA SU650 2.5\" 512GB SATA SS", "On Hand": 0, "Available": -1, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRIX NC3FXX POLE FEMALE CON", "On Hand": 0, "Available": -70, "Committed": 70, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRIX NC3MXX POLE MALE CONNE", "On Hand": 0, "Available": -70, "Committed": 70, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}], "needs_restock": [{"Item Name": "ADATA SU650 2.5\" 512GB SATA SS", "On Hand": 0, "Available": -1, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRIX NC3FXX POLE FEMALE CON", "On Hand": 0, "Available": -70, "Committed": 70, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRIX NC3MXX POLE MALE CONNE", "On Hand": 0, "Available": -70, "Committed": 70, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HT-102 WALL MOUNT 26\"-63\"", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 4500 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LG 32MR50C-B 32\" CURVED MONITO", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "H-21 TYPE-C TO HDMI ADAPTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE Z790 AORUS MASTER D5", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA SU650 2.5\" 1TB SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER AL15-41P-R16X LAPTOP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA LEGEND 860 1TB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADAPTOR KPL-060F-VI", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TXRUI 512GB M.2 NVME SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TRANSCEND ESD380C 1TB EXT SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADLINK A23 HDMI TO VGA ADAPTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ADATA LEGEND 860 2TB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NETAC SA500 2.5\" 512GB SATA SS", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MSI PRO B760M-P", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NB F80 MONITOR MOUNT STAND", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS WINDOWS 11 HOME 64BIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE P550B 550W 80PLUS BRO", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MDA 3420 MOSFET", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE 2.5\" 240GB SATA SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE H510M K V2", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LAPTOP SCREEN 14\" LED SLIM", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LAPTOP CHARGER", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KEYBOARD LAPTOP", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON LQ590 RIBBON", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FANTECH GO W608 WLESS MOUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TXRUI 256GB M.2 NVME SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER 19V-2.37A CHARGER", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE 2TB ONE TOUCH EXT. HDD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-7100 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY S20 CPU COOLER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSTON NV3 500GB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KASPERSKY PLUS 1U", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i7-12700K PROCESSOR", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i7-7700 PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION DS-7604NXI-K1/4P", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HP SMART TANK 210 WLESS PRINTE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APC BVX650I-PH 650VA UPS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APACER 512GB M.2 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 7 9700X PROCESSOR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "APACER 2280 GEN3 512GB M.2 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COLORFUL RTX 3050 6GB  GDDR6", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CMOS BATTERY", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "POWERLOGIC NETWORK CABINET 27U", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COLORFUL RTX3060Ti VIDEOCARD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ORICO AXM2-G2-GY-BP M.2 ECLOSU", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HP 15-FD1455TU LAPTOP-ultra 7-", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE H610M H V3 DDR4", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "D-TECH 6409W 9U WALLMOUNTED DA", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DELI UTILITY KNIFE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH C6MS 3 in 1 KIT WHIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BROTHER LC3617 MAGENTA INK CAR", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BROTHER DR2560 DRUM KIT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LENOVO V15 G4 IAN LAPTOP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LENOVO THINKCENTRE M70S", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LENOVO PU 3000 IC", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR NM710 500GB M.2 GEN4 SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LCD WALL MOUNT N2", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FORTINET 80F 1YR UTP LICENSE F", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FORTINET FG-80F DEVICE", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON L5290 PRINTER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE 2TB ONE TOUCH EXT HDD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK POE150S GIGABIT POE INJ", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON FIT FH-GR CASING", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 870 EVO 2.5\" 250GB SSD", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "REDRAGON M609 PHASER MOUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 4GB 2666 SODIMM", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PROLINK PMW5010 BLK MOUSE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "REDRAGON BS-8773 WIRELESS KB&M", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS 19V 4.74A CHARGER", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS PRIME H610M-E D5", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS E1404FA-EB815SWSM LAPTOP", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SECURE 1000VA UPS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK ARCHER TX50E AX3000 ADA", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SECURE SS7-12 12V-7AH SMALL", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SOLDERING IRON TIP PASTE", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "256GB M.2 SSD", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEASONIC FOCUS GX-750 750W 80", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE SKYHAWK 3.5\" 2TB SATA", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEASONIC SSR-850FM FOCUS", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "THERMAL PASTE BIG", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "XIAOMI G27Qi 27\" 2K GAMING MON", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ZKTECO MB460 PLUS TIME&ATTENDA", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE BARRACUDA 3.5\" 4TB SAT", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE ONE TOUCH 8TB HDD W/ H", "On Hand": 1, "Available": 1, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS24D300GAEXXP 24\"", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS24D300GAEXXP 24\" MON", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PROLINK PRO1201SFC-6N 1200VA U", "On Hand": 1, "Available": 0, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 7 5700X PROCESSOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "UPHERE N10 CPU COOLER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY HT220 BLACK HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY HG710 BLACK HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "U7- PRO CEILING MOUNTED WIFI 7", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BROTHER LC3617 YELLOW INK CART", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ORICO 25PW1-C3-BK-EP 2.5\" ENCL", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ORASHARE HS03 HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NVISION H22V8 21.5\" MONITOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DELI T706H 6SOCKET 5M", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DEEPCOOL MATX SMARTER CASE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "CORSAIR CX550 550W 80PLUS BRON", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE 2.5\" 480GB SATA SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS OFFICE HOME & BUSINESS 2024", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "FLYMAN SCREW DRIVER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MERCUSYS MR50G AC1900 GIGABIT", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MLOONG MX301 GAMING MOUSE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "XIAOMI SMART BAND 9 ACTIVE", "On Hand": 2, "Available": 1, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION DP TO HDMI CABLE 4K 1.", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKSEMI WAVE 256GB SSD SATA", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "A4TECH 3330N WLESS COMBO", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SEAGATE BARRACUDA 3.5\" 2TB SAT", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VIKINGS VKF120B FAN", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VIDEO BALUN 8MP CLIP TYPE", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK TL-POE150S GIGABIT POE", "On Hand": 2, "Available": 0, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "4GB DDR4 SODIMM FOR NOTEBOOK", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BALLPEN BALLPOINTPEN", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG LS22F320GAEXXP 22\"", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG SSD 980 250GB M.2 SSD", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 5 5600 PROCESSOR", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SECURE SS7-12 12V-7AH", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "PRESTIGE COPY HOLDER", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "POLY BLACKWIRE 3220 HEADSET", "On Hand": 2, "Available": 2, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "MS OFFICE PROFESSIONAL PLUS 20", "On Hand": 3, "Available": 1, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HDMI CABLE 5M H25", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GIGABYTE H610M K DDR4", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LOGITECH H390 USB HEADSET", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "COOLMAN SPECTRA M-ATX WHITE CA", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "WESTERN DIGITAL PURPLE PRO 3.5", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "THERMALRIGHT THERMAL PAD", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "RAPOO M10 PLUS WLESS MOUSE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BELDEN CAT6 E UTP CABLE", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK TL-SG1024D 24PORT GIGAB", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TEAMGROUP MP33 PRO 1TB M.2 SSD", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON L121 PRINTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NEUTRON ATOM F01 SLIM CASE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SECURE 650VA UPS", "On Hand": 3, "Available": 1, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HDMI CABLE 10M BLUEMESH", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY NK688 MECHANICAL KEYBOA", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION HDMI CABLE 10M BLK/YEL", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TPLINK USB TO GIGABIT ADAPTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION KQJHO WLESS PRESENTER", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INPLAY LITE X220 BLACK CASING", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH A305 ATX WHITE CASE", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NVISION N190HD V8 19\" MONITOR", "On Hand": 3, "Available": 0, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "NVISION N2455 PRO 23.8\" MONITO", "On Hand": 3, "Available": 3, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKSEMI ARMOR 8GB 3200 DDR4", "On Hand": 3, "Available": 2, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "JABRA HSC016  EVOLVE 20 HEADSE", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSPEC 2.5\" 480GB SSD", "On Hand": 4, "Available": 2, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LOGITECH B100 USB WIRED MS", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "HIKVISION DS-2CD1347G2-L DOME", "On Hand": 4, "Available": 0, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "A4TECH HU-30 HEADSET", "On Hand": 4, "Available": -11, "Committed": 15, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "RASURE EXTENDED MOUSEPAD RGB", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ASUS E1404FA-NK611WSM LAPTOP", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "REDRAGON GS550 ORPHEUS SPEAKER", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER AC550 550W 80PLUS BRONZE", "On Hand": 4, "Available": 1, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH C6MS 3 in 1 KIT BLAC", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION 1X4 HDMI SPLITTER", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION DP TO HDMI CABLE 3M 4K", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EDIFIER X1 LITE BLK EARPHONE", "On Hand": 4, "Available": 3, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ACER AC650 650W 80PLUS BRONZE", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "LEXAR NQ790 1TB M.2 GEN4  SSD", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "BROTHER LC3617 CYAN INK CARTR", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VGA CABLE 1.5M", "On Hand": 4, "Available": 4, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "VENTION HDMI CABLE 2M 4K BLK/Y", "On Hand": 4, "Available": 1, "Committed": 3, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "ELECTRON 700W POWERSUPPLY", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "AMD RYZEN 7 5700G PROCESSOR", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i5-12400 PROCESSOR", "On Hand": 5, "Available": 1, "Committed": 4, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "KINGSTON NV3 500GB M.2 NVME", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON 003 YELLOW INK", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "TRANSCEND 8GB 5600 DDR5", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DARKFLASH A305 ATX BLACK CASE", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "SAMSUNG 8GB 56000 SODIMM", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "DC PLUG CONNECTOR MALE", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "EPSON L3250 PRINTER", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i3-12100 PROCESSOR", "On Hand": 5, "Available": 4, "Committed": 1, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "GOOJODOO FB045 SMART WATCH", "On Hand": 5, "Available": 5, "Committed": 0, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}, {"Item Name": "INTEL CORE i5-10400 PROCESSOR", "On Hand": 5, "Available": 3, "Committed": 2, "STATUS LOCATION": "COMMON ITEM FAST MOVING"}], "trends": {"LEXAR 8GB 2666 DDR4": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 70, 46, 217, 183, 150, 121, 98, 77], "AMDRYZEN ORIGINAL HEATSINKFAN": [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 31, 31, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36], "KINGSTON KF432C16BB/8 RAM": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 31, 27, 27], "AMD RYZEN ORIGINAL HEATSINKFAN": [3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 21, 21, 21, 21, 21, 21, 21, 21], "MSI PRO H610M-S DDR4": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 12, 10, 23, 20], "INTEL CORE ULTRA 5 225 LGA1851": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 19, 18], "LEXAR NM620 256GB M.2 SSD": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 25, 21, 19, 17, 16], "INTEL CORE i3-10105 PROCESSOR": [0, 0, 0, 0, 29, 4, 9, 1, 1, 3, 2, 0, 3, 22, 3, 5, 5, 4, 2, 4, 4, 4, 1, 1, 21, 0, 0, 15], "MSI RTX3070 GAMING X TRIO": [13, 12, 12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12], "TRANSCEND 16GB 5600 DDR5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 2, 0, 0, 0, 15, 12, 11], "YGT V100 WHITE CASE W/ PSU": [0, 0, 0, 0, 40, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10], "GALAX RTX3060Ti 8GB VIDEOCARD": [14, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 12, 12, 12, 12, 12, 12, 11, 11, 10], "AMD RYZEN 5 5600X PROCESSOR": [0, 0, 1, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 1, 1, 0, 10, 10, 10, 10, 10, 10], "AMD RYZEN 3 3200G PROCESSOR": [0, 0, 0, 0, 0, 0, 0, 2, 4, 4, 4, 5, 5, 4, 7, 7, 3, 10, 5, 6, 7, 6, 18, 17, 16, 15, 13, 10], "LEXAR NQ790 1TB M.2 SSD": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 11, 10, 9], "AMD RYZEN 5 5600GT PROCESSOR": [0, 0, 0, 0, 0, 0, 0, 0, 6, 9, 7, 7, 6, 7, 10, 9, 8, 5, 2, 5, 4, 0, 19, 14, 11, 10, 9, 8], "ASUS TUF RTX3070 8GB GAMING": [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 8, 7, 7, 7, 7], "MSI PRO B760M-A WIFI DDR4": [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 2, 1, 0, 1, 1, 0, 0, 0, 0, 7, 7, 7, 7, 6, 6], "LEXAR THOR 16GB 3200 DDR4": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 16, 11, 8, 7, 6], "GIGABYTE RTX3070 8GB VIDEOCARD": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5], "AMD RYZEN 7 5700G PROCESSOR": [0, 0, 0, 0, 0, 1, 2, 0, 1, 2, 1, 2, 1, 2, 2, 1, 0, 1, 1, 2, 0, 1, 9, 6, 6, 6, 5, 5], "TRANSCEND 8GB 5600 DDR5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5], "INTEL CORE i5-10400 PROCESSOR": [0, 0, 0, 0, 0, 0, 0, 4, 6, 5, 2, 4, 3, 3, 5, 4, 2, 5, 2, 2, 56, 2, 0, 4, 9, 7, 6, 5], "INTEL CORE i3-12100 PROCESSOR": [0, 0, 0, 0, 0, 6, 6, 6, 5, 5, 5, 5, 9, 10, 10, 10, 8, 5, 5, 3, 4, 4, 16, 2, 7, 7, 7, 5], "INTEL CORE i5-12400 PROCESSOR": [0, 0, 0, 0, 0, 7, 4, 5, 2, 4, 3, 6, 4, 5, 9, 9, 11, 18, 7, 3, 1, 0, 24, 20, 20, 19, 12, 5], "KINGSPEC 2.5\" 480GB SSD": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 4], "COLORFUL RTX3060TI ULTRA WHITE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4], "PNY RTX3060Ti 8GB VIDEOCARD": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4], "MSI RTX3070 VENTUS 3X OC": [2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], "LEXAR NQ790 1TB M.2 GEN4  SSD": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 4, 4, 4]}, "total_unique_skus": 437, "total_fast_moving": 246, "total_aging": 167, "date_labels": ["Jun 17", "Jun 24", "Jul 02", "Jul 10", "Jul 18", "Jul 26", "Aug 03", "Aug 11", "Aug 19", "Aug 27", "Sep 04", "Sep 13", "Sep 24", "Oct 05", "Oct 16", "Oct 26", "Nov 06", "Nov 17", "Nov 28", "Dec 09", "Dec 20", "Dec 31", "Jan 10", "Jan 21", "Feb 01", "Feb 12", "Feb 23", "Mar 03"], "date_labels_full": ["Jun 17, 2025", "Jun 24, 2025", "Jul 02, 2025", "Jul 10, 2025", "Jul 18, 2025", "Jul 26, 2025", "Aug 03, 2025", "Aug 11, 2025", "Aug 19, 2025", "Aug 27, 2025", "Sep 04, 2025", "Sep 13, 2025", "Sep 24, 2025", "Oct 05, 2025", "Oct 16, 2025", "Oct 26, 2025", "Nov 06, 2025", "Nov 17, 2025", "Nov 28, 2025", "Dec 09, 2025", "Dec 20, 2025", "Dec 31, 2025", "Jan 10, 2026", "Jan 21, 2026", "Feb 01, 2026", "Feb 12, 2026", "Feb 23, 2026", "Mar 03, 2026"], "date_labels_2026": ["Jan 10", "Jan 21", "Feb 01", "Feb 12", "Feb 23", "Mar 03"], "date_labels_full_2026": ["Jan 10, 2026", "Jan 21, 2026", "Feb 01, 2026", "Feb 12, 2026", "Feb 23, 2026", "Mar 03, 2026"], "sheet_labels_2026": [177, 185, 193, 201, 209, 215], "trends_2026": {"LEXAR 8GB 2666 DDR4": [217, 183, 150, 121, 98, 77], "AMDRYZEN ORIGINAL HEATSINKFAN": [36, 36, 36, 36, 36, 36], "KINGSTON KF432C16BB/8 RAM": [0, 0, 34, 31, 27, 27], "AMD RYZEN ORIGINAL HEATSINKFAN": [21, 21, 21, 21, 21, 21], "MSI PRO H610M-S DDR4": [5, 5, 12, 10, 23, 20], "INTEL CORE ULTRA 5 225 LGA1851": [0, 0, 0, 20, 19, 18], "LEXAR NM620 256GB M.2 SSD": [12, 25, 21, 19, 17, 16], "INTEL CORE i3-10105 PROCESSOR": [1, 1, 21, 0, 0, 15], "MSI RTX3070 GAMING X TRIO": [12, 12, 12, 12, 12, 12], "TRANSCEND 16GB 5600 DDR5": [0, 0, 0, 15, 12, 11], "YGT V100 WHITE CASE W/ PSU": [10, 10, 10, 10, 10, 10], "GALAX RTX3060Ti 8GB VIDEOCARD": [12, 12, 12, 11, 11, 10], "AMD RYZEN 5 5600X PROCESSOR": [10, 10, 10, 10, 10, 10], "AMD RYZEN 3 3200G PROCESSOR": [18, 17, 16, 15, 13, 10], "LEXAR NQ790 1TB M.2 SSD": [1, 1, 0, 11, 10, 9], "AMD RYZEN 5 5600GT PROCESSOR": [19, 14, 11, 10, 9, 8], "ASUS TUF RTX3070 8GB GAMING": [8, 8, 7, 7, 7, 7], "MSI PRO B760M-A WIFI DDR4": [7, 7, 7, 7, 6, 6], "LEXAR THOR 16GB 3200 DDR4": [6, 16, 11, 8, 7, 6], "GIGABYTE RTX3070 8GB VIDEOCARD": [5, 5, 5, 5, 5, 5], "AMD RYZEN 7 5700G PROCESSOR": [9, 6, 6, 6, 5, 5], "TRANSCEND 8GB 5600 DDR5": [0, 0, 0, 5, 5, 5], "INTEL CORE i5-10400 PROCESSOR": [0, 4, 9, 7, 6, 5], "INTEL CORE i3-12100 PROCESSOR": [16, 2, 7, 7, 7, 5], "INTEL CORE i5-12400 PROCESSOR": [24, 20, 20, 19, 12, 5], "KINGSPEC 2.5\" 480GB SSD": [0, 0, 0, 0, 5, 4], "COLORFUL RTX3060TI ULTRA WHITE": [0, 0, 0, 4, 4, 4], "PNY RTX3060Ti 8GB VIDEOCARD": [5, 5, 5, 5, 5, 4], "MSI RTX3070 VENTUS 3X OC": [4, 4, 4, 4, 4, 4], "LEXAR NQ790 1TB M.2 GEN4  SSD": [0, 0, 0, 4, 4, 4]}};
+const allItems = RAW.all_items;
+const desktopItems = RAW.desktop_items;
+const sheetLabels = RAW.sheet_labels_2026;
+const dateLabels = RAW.date_labels_2026;
+const datesFull = RAW.date_labels_full_2026;
+const trends = RAW.trends_2026;
+
+// ═══════════════════════ USERS ═══════════════════════
+const USERS = {
+  joseph: { pass: 'admin123', role: 'ADMIN', name: 'Joseph', display: 'President' },
+  diane:  { pass: 'staff123', role: 'STAFF', name: 'Diane',  display: 'Inventory Staff' }
+};
+
+let currentUser = null;
+
+// ═══════════════════════ CLOCK ═══════════════════════
+function tick() {
+  const t = new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const el = document.getElementById('clock');
+  const el2 = document.getElementById('dash-clock');
+  if(el) el.textContent = t;
+  if(el2) el2.textContent = t;
+}
+setInterval(tick, 1000);
+tick();
+
+// ═══════════════════════ LOGIN ═══════════════════════
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim().toLowerCase();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  const user = USERS[u];
+  if (!user || user.pass !== p) {
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  currentUser = { username: u, ...user };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  // Set user chip
+  document.getElementById('user-name-display').textContent = user.name;
+  document.getElementById('user-role-display').textContent = user.display;
+  const av = document.getElementById('user-avatar');
+  av.textContent = user.name[0];
+  av.className = 'user-avatar ' + (user.role === 'ADMIN' ? 'avatar-admin' : 'avatar-staff');
+  if (user.role === 'STAFF') {
+    // Diane — show only upload
+    document.getElementById('topbar').style.display = 'none';
+    document.getElementById('admin-pages').style.display = 'none';
+    const up = document.getElementById('upload-page');
+    up.style.display = 'flex';
+    up.style.flexDirection = 'column';
+    renderUploadHistory();
+  } else {
+    // Joseph — show dashboard
+    document.getElementById('topbar').style.display = 'flex';
+    document.getElementById('upload-page').style.display = 'none';
+    document.getElementById('admin-pages').style.display = 'block';
+    initDashboard();
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ═══════════════════════ NAVIGATION ═══════════════════════
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id === 'inventory') renderInvTable(allItems);
+  if(id === 'desktop') renderDeskTable(desktopItems);
+  if(id === 'trends') initFullTrends();
+}
+
+// ═══════════════════════ INIT DASHBOARD ═══════════════════════
+let dashTrendChart, catChartInst, fullTrendChartInst;
+
+function initDashboard() {
+  const fast = allItems.filter(x => (x['STATUS LOCATION']||'').includes('FAST MOVING'));
+  const aging = allItems.filter(x => (x['STATUS LOCATION']||'').includes('AGING'));
+  const restock = fast.filter(x => (x['On Hand']||0) <= 5);
+  const out = fast.filter(x => (x['On Hand']||0) === 0);
+
+  document.getElementById('kpi-total').textContent = allItems.length;
+  document.getElementById('kpi-fast').textContent = fast.length;
+  document.getElementById('kpi-restock').textContent = restock.length;
+  document.getElementById('kpi-aging').textContent = aging.length;
+  document.getElementById('out-badge').textContent = out.length;
+  document.getElementById('low-badge').textContent = restock.filter(x => x['On Hand'] > 0).length;
+
+  // Alerts
+  const cp = document.getElementById('critical-panel');
+  if(out.length === 0) cp.innerHTML = `<div style="color:var(--text3);padding:12px;font-size:12px">✓ No out-of-stock fast-moving items</div>`;
+  else out.slice(0,10).forEach(i => {
+    cp.innerHTML += `<div class="alert-row alert-critical"><span class="alert-name">${i['Item Name']}</span><span class="alert-qty" style="color:var(--red)">0</span></div>`;
+  });
+
+  const lp = document.getElementById('low-panel');
+  const lowNonZero = restock.filter(x => x['On Hand'] > 0);
+  lowNonZero.slice(0,12).forEach(i => {
+    lp.innerHTML += `<div class="alert-row alert-low"><span class="alert-name">${i['Item Name']}</span><span class="alert-qty" style="color:var(--yellow)">${i['On Hand']}</span></div>`;
+  });
+
+  // Trend pills
+  const trendKeys = Object.keys(trends).slice(0,12);
+  const pp = document.getElementById('dash-trend-pills');
+  trendKeys.forEach((k,i) => {
+    const b = document.createElement('button');
+    b.className = 'trend-pill' + (i===0?' active':'');
+    b.textContent = k;
+    b.title = k;
+    b.onclick = () => {
+      document.querySelectorAll('#dash-trend-pills .trend-pill').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      updateDashTrend(k);
+    };
+    pp.appendChild(b);
+  });
+  if(trendKeys.length) updateDashTrend(trendKeys[0]);
+
+  // Category chart
+  initCatChart();
+}
+
+function updateDashTrend(item) {
+  const data = trends[item] || [];
+  const labels = dateLabels;
+  if(dashTrendChart) dashTrendChart.destroy();
+  const ctx = document.getElementById('dashTrendChart').getContext('2d');
+  dashTrendChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'On Hand',data,
+        borderColor:'#06b6d4',
+        backgroundColor:'rgba(6,182,212,0.07)',
+        borderWidth:2,
+        pointRadius:data.map(v=>v===0?4:2),
+        pointBackgroundColor:data.map(v=>v===0?'#ef4444':v<=3?'#f59e0b':'#06b6d4'),
+        tension:0.35,fill:true
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,
+          titleColor:'#06b6d4',bodyColor:'#e2e8f0',
+          callbacks:{title:items=>datesFull[items[0].dataIndex]||'',label:i=>` On Hand: ${i.raw}`}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9},maxTicksLimit:8},grid:{color:'#1f2d3d'}},
+        y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:10}},grid:{color:'#1f2d3d'},min:0}
+      }
+    }
+  });
+}
+
+function initCatChart() {
+  const cats = {
+    'Processors': allItems.filter(x=>/PROCESSOR|RYZEN|CORE I[3579]|CORE ULTRA/i.test(x['Item Name'])),
+    'RAM': allItems.filter(x=>/\bRAM\b|DDR4|DDR5|8GB.*MHZ|DIMM/i.test(x['Item Name'])),
+    'Storage': allItems.filter(x=>/SSD|M\.2|NVME|HDD/i.test(x['Item Name'])),
+    'GPU': allItems.filter(x=>/RTX|GTX|VIDEOCARD|RADEON|GEFORCE/i.test(x['Item Name'])),
+    'Motherboard': allItems.filter(x=>/MOTHERBOARD|MOBO|H610|B760|Z790/i.test(x['Item Name'])),
+    'Case/PSU': allItems.filter(x=>/CASING|CASE.*PSU|W\/.*PSU/i.test(x['Item Name'])),
+    'Laptops': allItems.filter(x=>/LAPTOP|NOTEBOOK/i.test(x['Item Name'])),
+    'Monitors': allItems.filter(x=>/MONITOR|\d+".*IPS|\d+".*LED/i.test(x['Item Name'])),
+    'Networking': allItems.filter(x=>/ROUTER|SWITCH|CAT[56]|UTP/i.test(x['Item Name'])),
+    'Peripherals': allItems.filter(x=>/KEYBOARD|MOUSE|HEADSET|HEADPHONE|SPEAKER/i.test(x['Item Name'])),
+  };
+  const colors = ['#3b82f6','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#6366f1'];
+  const catArr = Object.entries(cats).map(([n,items],i)=>({
+    name:n,
+    total:items.reduce((s,x)=>s+(x['On Hand']||0),0),
+    skus:items.length,color:colors[i]
+  })).sort((a,b)=>b.total-a.total);
+
+  const ctx = document.getElementById('catChart').getContext('2d');
+  catChartInst = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:catArr.map(c=>c.name),
+      datasets:[{
+        data:catArr.map(c=>c.total),
+        backgroundColor:catArr.map(c=>c.color+'28'),
+        borderColor:catArr.map(c=>c.color),
+        borderWidth:1.5,borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,
+        titleColor:'#e2e8f0',bodyColor:'#06b6d4'
+      }},
+      scales:{
+        x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{display:false}},
+        y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:10}},grid:{color:'#1f2d3d'}}
+      }
+    }
+  });
+
+  const maxT = Math.max(...catArr.map(c=>c.total));
+  const div = document.getElementById('cat-bars-div');
+  catArr.forEach(c => {
+    div.innerHTML += `<div class="cat-row">
+      <span class="cat-lbl">${c.name}</span>
+      <div class="cat-track"><div class="cat-fill" style="width:${c.total/maxT*100}%;background:${c.color}"></div></div>
+      <span class="cat-num">${c.total}</span>
+    </div>`;
+  });
+}
+
+// ═══════════════════════ TABLE HELPERS ═══════════════════════
+function statusBadge(s) {
+  if(!s) return '';
+  if(s.includes('FAST')) return '<span class="badge badge-fast">FAST</span>';
+  if(s.includes('AGING')) return '<span class="badge badge-aging">AGING</span>';
+  if(s.includes('CONSIGN')) return '<span class="badge badge-consign">CONSIGN</span>';
+  return `<span class="badge" style="background:rgba(74,96,128,0.15);color:#4b6080;border:1px solid #1f2d3d">${s.substring(0,6)}</span>`;
+}
+
+function stockColor(v, max) {
+  if(v===0) return '#ef4444';
+  const p = max>0?v/max:0;
+  if(p<0.1) return '#ef4444';
+  if(p<0.25) return '#f59e0b';
+  return '#10b981';
+}
+
+function tableRow(item, maxV) {
+  const oh = item['On Hand']||0, av = item['Available']||0, cm = item['Committed']||0;
+  const pct = maxV>0?Math.min(oh/maxV*100,100):0;
+  const col = stockColor(oh,maxV);
+  const avCol = av<=0?'var(--red)':av<=3?'var(--yellow)':'var(--green)';
+  return `<tr>
+    <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item['Item Name']}</td>
+    <td class="mono r">${oh}</td>
+    <td class="mono r" style="color:${avCol}">${av}</td>
+    <td class="mono r">${cm}</td>
+    <td><div class="sbar-wrap"><div class="sbar" style="width:${pct}%;background:${col}"></div></div></td>
+    <td>${statusBadge(item['STATUS LOCATION'])}</td>
+  </tr>`;
+}
+
+// ═══════════════════════ INV TABLE ═══════════════════════
+function renderInvTable(data) {
+  const maxV = Math.max(...data.map(x=>x['On Hand']||0));
+  document.getElementById('inv-tbody').innerHTML = data.slice(0,200).map(i=>tableRow(i,maxV)).join('');
+  document.getElementById('inv-count').textContent = data.length;
+}
+
+function filterInvTable() {
+  const q = document.getElementById('inv-search').value.toLowerCase();
+  const s = document.getElementById('inv-status').value;
+  let d = allItems;
+  if(q) d = d.filter(x=>x['Item Name'].toLowerCase().includes(q));
+  if(s) d = d.filter(x=>x['STATUS LOCATION']===s);
+  renderInvTable(d);
+}
+
+// ═══════════════════════ DESKTOP TABLE ═══════════════════════
+function renderDeskTable(data) {
+  const maxV = Math.max(...data.map(x=>x['On Hand']||0));
+  document.getElementById('desk-tbody').innerHTML = data.map(i=>tableRow(i,maxV)).join('');
+}
+
+function filterDeskTable() {
+  const q = document.getElementById('desk-search').value.toLowerCase();
+  renderDeskTable(desktopItems.filter(x=>x['Item Name'].toLowerCase().includes(q)));
+}
+
+// ═══════════════════════ FULL TRENDS ═══════════════════════
+function initFullTrends() {
+  const pp = document.getElementById('trends-pills');
+  pp.innerHTML = '';
+  const keys = Object.keys(trends);
+  keys.forEach((k,i) => {
+    const b = document.createElement('button');
+    b.className = 'trend-pill'+(i===0?' active':'');
+    b.textContent = k; b.title = k;
+    b.onclick = () => {
+      document.querySelectorAll('#trends-pills .trend-pill').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      updateFullTrend(k);
+    };
+    pp.appendChild(b);
+  });
+  if(keys.length) updateFullTrend(keys[0]);
+}
+
+function updateFullTrend(item) {
+  const data = trends[item]||[];
+  const labels = dateLabels;
+  if(fullTrendChartInst) fullTrendChartInst.destroy();
+  const ctx = document.getElementById('fullTrendChart').getContext('2d');
+  fullTrendChartInst = new Chart(ctx, {
+    type:'line',
+    data:{labels,datasets:[{
+      label:'On Hand',data,
+      borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.07)',
+      borderWidth:2.5,pointRadius:4,
+      pointBackgroundColor:data.map(v=>v===0?'#ef4444':v<=3?'#f59e0b':'#8b5cf6'),
+      tension:0.3,fill:true
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,
+          titleColor:'#8b5cf6',bodyColor:'#e2e8f0',
+          callbacks:{label:i=>` On Hand: ${i.raw}`}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9},maxRotation:45,maxTicksLimit:14},grid:{color:'#1f2d3d'}},
+        y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:10}},grid:{color:'#1f2d3d'},min:0}
+      }
+    }
+  });
+}
+
+// ═══════════════════════ KPI MODAL ═══════════════════════
+let modalDataset = [];
+
+const KPI_CONFIG = {
+  all: {
+    title: '📦 All Inventory', sub: 'Complete SKU list across all categories',
+    filter: items => items,
+    color: '#3b82f6',
+    stats: items => [
+      { val: items.length, lbl: 'Total SKUs', color: '#3b82f6' },
+      { val: items.reduce((s,x)=>s+(x['On Hand']||0),0), lbl: 'Total On Hand', color: '#06b6d4' },
+      { val: items.reduce((s,x)=>s+(x['Available']||0),0), lbl: 'Total Available', color: '#10b981' }
+    ]
+  },
+  fast: {
+    title: '⚡ Fast Moving Items', sub: 'COMMON ITEM FAST MOVING — high turnover SKUs',
+    filter: items => items.filter(x=>(x['STATUS LOCATION']||'').includes('FAST MOVING')),
+    color: '#10b981',
+    stats: items => [
+      { val: items.length, lbl: 'Fast Moving SKUs', color: '#10b981' },
+      { val: items.filter(x=>x['On Hand']>0).length, lbl: 'In Stock', color: '#06b6d4' },
+      { val: items.filter(x=>x['On Hand']===0).length, lbl: 'Out of Stock', color: '#ef4444' }
+    ]
+  },
+  restock: {
+    title: '⚠️ Needs Restock', sub: 'Fast-moving items with 5 or fewer units remaining',
+    filter: items => items.filter(x=>(x['STATUS LOCATION']||'').includes('FAST MOVING')&&(x['On Hand']||0)<=5),
+    color: '#f59e0b',
+    stats: items => [
+      { val: items.length, lbl: 'Need Restock', color: '#f59e0b' },
+      { val: items.filter(x=>x['On Hand']===0).length, lbl: 'Out of Stock', color: '#ef4444' },
+      { val: items.filter(x=>x['On Hand']>0&&x['On Hand']<=3).length, lbl: 'Critical (≤3)', color: '#f97316' }
+    ]
+  },
+  aging: {
+    title: '🕰️ Aging Items', sub: 'Slow-moving inventory — review for markdown or return',
+    filter: items => items.filter(x=>(x['STATUS LOCATION']||'').includes('AGING')),
+    color: '#8b5cf6',
+    stats: items => [
+      { val: items.length, lbl: 'Aging SKUs', color: '#8b5cf6' },
+      { val: items.reduce((s,x)=>s+(x['On Hand']||0),0), lbl: 'Units Tied Up', color: '#f59e0b' },
+      { val: items.filter(x=>(x['On Hand']||0)>10).length, lbl: 'High Qty Aging', color: '#ef4444' }
+    ]
+  }
+};
+
+function openKPIModal(type) {
+  const cfg = KPI_CONFIG[type];
+  const filtered = cfg.filter(allItems).sort((a,b)=>(b['On Hand']||0)-(a['On Hand']||0));
+  modalDataset = filtered;
+
+  document.getElementById('modal-title').textContent = cfg.title;
+  document.getElementById('modal-sub').textContent = `${filtered.length} items`;
+  document.getElementById('modal-search-input').value = '';
+  document.getElementById('modal-sort').value = 'onhand-desc';
+
+  const stats = cfg.stats(filtered);
+  document.getElementById('modal-stats').innerHTML = stats.map(s=>`
+    <div class="modal-stat">
+      <div class="modal-stat-val" style="color:${s.color}">${s.val.toLocaleString()}</div>
+      <div class="modal-stat-lbl">${s.lbl}</div>
+    </div>`).join('');
+
+  renderModalTable(filtered);
+  document.getElementById('kpi-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('kpi-modal').classList.remove('open');
+}
+
+function renderModalTable(data) {
+  const maxV = Math.max(...data.map(x=>x['On Hand']||0),1);
+  document.getElementById('modal-tbody').innerHTML = data.map(i=>tableRow(i,maxV)).join('');
+}
+
+function filterModalTable() {
+  const q = document.getElementById('modal-search-input').value.toLowerCase();
+  const sort = document.getElementById('modal-sort').value;
+  let d = modalDataset.filter(x=>x['Item Name'].toLowerCase().includes(q));
+  if(sort==='onhand-asc') d.sort((a,b)=>(a['On Hand']||0)-(b['On Hand']||0));
+  else if(sort==='onhand-desc') d.sort((a,b)=>(b['On Hand']||0)-(a['On Hand']||0));
+  else if(sort==='name') d.sort((a,b)=>a['Item Name'].localeCompare(b['Item Name']));
+  else if(sort==='avail-asc') d.sort((a,b)=>(a['Available']||0)-(b['Available']||0));
+  renderModalTable(d);
+}
+
+// Close modal on overlay click
+document.getElementById('kpi-modal').addEventListener('click', function(e) {
+  if(e.target === this) closeModal();
+});
+
+// ═══════════════════════ DIANE UPLOAD ═══════════════════════
+let selectedFile = null;
+const uploadHistory = [
+  { file: 'inventory_2-28-26.xlsx', time: 'Feb 28, 2026 — 9:14 AM' },
+  { file: 'inventory_2-21-26.xlsx', time: 'Feb 21, 2026 — 9:02 AM' },
+  { file: 'inventory_2-14-26.xlsx', time: 'Feb 14, 2026 — 9:31 AM' },
+];
+
+function renderUploadHistory() {
+  const el = document.getElementById('upload-history-list');
+  if(uploadHistory.length===0) { el.innerHTML = `<div style="color:var(--text3);font-size:12px">No uploads yet.</div>`; return; }
+  el.innerHTML = uploadHistory.map(h=>`
+    <div class="history-item">
+      <div class="history-dot"></div>
+      <span class="history-file">📄 ${h.file}</span>
+      <span class="history-time">${h.time}</span>
+    </div>`).join('');
+}
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('dropzone').classList.add('dragover'); }
+function handleDragLeave(e) { document.getElementById('dropzone').classList.remove('dragover'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if(f) setFile(f);
+}
+function handleFileSelect(input) { if(input.files[0]) setFile(input.files[0]); }
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('dz-icon').textContent = '📄';
+  document.getElementById('dz-text').textContent = f.name;
+  document.getElementById('dz-sub').textContent = `${(f.size/1024).toFixed(1)} KB — ready to upload`;
+  document.getElementById('upload-btn').classList.add('visible');
+}
+
+function startUpload() {
+  if(!selectedFile) return;
+  document.getElementById('upload-btn').style.display = 'none';
+  document.getElementById('upload-progress').style.display = 'block';
+
+  const steps = ['step1','step2','step3','step4'];
+  const delays = [600,1200,1800,2400];
+
+  steps.forEach((s,i) => {
+    setTimeout(() => {
+      document.getElementById(s+'-icon').className = 'step-icon step-active';
+      document.getElementById(s+'-icon').textContent = '↻';
+    }, delays[i]);
+    setTimeout(() => {
+      document.getElementById(s+'-icon').className = 'step-icon step-done';
+      document.getElementById(s+'-icon').textContent = '✓';
+    }, delays[i]+500);
+  });
+
+  setTimeout(() => {
+    document.getElementById('upload-progress').style.display = 'none';
+    document.getElementById('upload-success').style.display = 'block';
+    const now = new Date();
+    uploadHistory.unshift({
+      file: selectedFile.name,
+      time: now.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) + ' — ' + now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})
+    });
+    renderUploadHistory();
+  }, 3200);
+}
+
+function resetUpload() {
+  selectedFile = null;
+  document.getElementById('dz-icon').textContent = '📂';
+  document.getElementById('dz-text').textContent = 'Drop your inventory file here';
+  document.getElementById('dz-sub').textContent = 'or click to browse — accepts .xlsx, .xls, .csv';
+  document.getElementById('upload-btn').classList.remove('visible');
+  document.getElementById('upload-btn').style.display = '';
+  document.getElementById('upload-success').style.display = 'none';
+  document.getElementById('upload-progress').style.display = 'none';
+  ['step1','step2','step3','step4'].forEach(s => {
+    document.getElementById(s+'-icon').className = 'step-icon step-pending';
+    document.getElementById(s+'-icon').textContent = s.replace('step','');
+  });
+  document.getElementById('file-input').value = '';
+}
+
+// Keyboard ESC to close modal
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>
