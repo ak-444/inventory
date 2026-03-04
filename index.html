@@ -1227,11 +1227,23 @@ function initStatusBreakdown(){
 
   const total=data.reduce((s,d)=>s+d.count,0);
   const totalUnits=data.reduce((s,d)=>s+d.units,0);
-  document.getElementById('sdc-total').textContent=total;
-  document.getElementById('status-total-units').textContent=totalUnits.toLocaleString()+' units';
+  document.getElementById('sdc-total').textContent=total||0;
+  document.getElementById('status-total-units').textContent=(totalUnits||0).toLocaleString()+' units';
 
-  if(statusDonutChart)statusDonutChart.destroy();
+  if(statusDonutChart){statusDonutChart.destroy();statusDonutChart=null;}
   const ctx=document.getElementById('statusDonutChart').getContext('2d');
+
+  // Empty state — show a grey placeholder donut
+  if(!data.length){
+    statusDonutChart=new Chart(ctx,{
+      type:'doughnut',
+      data:{labels:['No Data'],datasets:[{data:[1],backgroundColor:['rgba(75,96,128,0.15)'],borderColor:['#1f2d3d'],borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
+    });
+    document.getElementById('status-legend').innerHTML=`<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px">No inventory data loaded</div>`;
+    return;
+  }
+
   statusDonutChart=new Chart(ctx,{
     type:'doughnut',
     data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.count),backgroundColor:data.map(d=>d.color+'22'),borderColor:data.map(d=>d.color),borderWidth:2,hoverOffset:6}]},
@@ -1285,6 +1297,12 @@ function initTrendPills(){
   const keys=Object.keys(TRENDS_DATA);
   const pp=document.getElementById('dash-trend-pills');
   pp.innerHTML='';
+  if(!keys.length){
+    if(dashTrendChart){dashTrendChart.destroy();dashTrendChart=null;}
+    const ctx=document.getElementById('dashTrendChart').getContext('2d');
+    dashTrendChart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'On Hand',data:[],borderColor:'#06b6d4',borderWidth:2,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}});
+    return;
+  }
   keys.slice(0,15).forEach((k,i)=>{
     const b=document.createElement('button');
     b.className='trend-pill'+(i===0?' active':'');
@@ -1331,12 +1349,12 @@ function initCatChart(){
   const colors=['#3b82f6','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ef4444','#14b8a6','#f97316','#ec4899','#6366f1'];
   const catArr=Object.entries(cats).map(([n,items],i)=>({name:n,total:items.reduce((s,x)=>s+(x['On Hand']||0),0),skus:items.length,color:colors[i]})).sort((a,b)=>b.total-a.total);
 
-  if(catChartInst)catChartInst.destroy();
+  if(catChartInst){catChartInst.destroy();catChartInst=null;}
   const ctx=document.getElementById('catChart').getContext('2d');
   catChartInst=new Chart(ctx,{
     type:'bar',
     data:{labels:catArr.map(c=>c.name),datasets:[{data:catArr.map(c=>c.total),backgroundColor:catArr.map(c=>c.color+'25'),borderColor:catArr.map(c=>c.color),borderWidth:1.5,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1}},scales:{x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:8},maxRotation:35},grid:{display:false}},y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1}},scales:{x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:8},maxRotation:35},grid:{display:false}},y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}
   });
   const maxT=Math.max(...catArr.map(c=>c.total),1);
   document.getElementById('cat-bars-div').innerHTML=catArr.map(c=>`
@@ -1383,8 +1401,13 @@ function tableRow(item,maxV){
 // INV TABLE
 // ════════════════════════════════════════════════════════
 function renderInvTable(data){
-  const maxV=Math.max(...data.map(x=>x['On Hand']||0),1);
-  document.getElementById('inv-tbody').innerHTML=data.slice(0,250).map(i=>tableRow(i,maxV)).join('');
+  const maxV=data.length ? Math.max(...data.map(x=>x['On Hand']||0),1) : 1;
+  const tbody = document.getElementById('inv-tbody');
+  if(!data.length){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px;font-size:13px">No inventory data. Upload a file to populate.</td></tr>`;
+  } else {
+    tbody.innerHTML=data.slice(0,250).map(i=>tableRow(i,maxV)).join('');
+  }
   document.getElementById('inv-count').textContent=data.length;
 }
 function filterInvTable(){
@@ -1400,8 +1423,13 @@ function filterInvTable(){
 // DESKTOP TABLE
 // ════════════════════════════════════════════════════════
 function renderDeskTable(data){
-  const maxV=Math.max(...data.map(x=>x['On Hand']||0),1);
-  document.getElementById('desk-tbody').innerHTML=data.map(i=>tableRow(i,maxV)).join('');
+  const maxV=data.length ? Math.max(...data.map(x=>x['On Hand']||0),1) : 1;
+  const tbody = document.getElementById('desk-tbody');
+  if(!data.length){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px;font-size:13px">No desktop parts data. Upload a file to populate.</td></tr>`;
+  } else {
+    tbody.innerHTML=data.map(i=>tableRow(i,maxV)).join('');
+  }
 }
 function filterDeskTable(){
   const q=document.getElementById('desk-search').value.toLowerCase();
@@ -1415,6 +1443,12 @@ function initFullTrends(){
   const keys=Object.keys(TRENDS_DATA);
   const pp=document.getElementById('trends-pills');
   pp.innerHTML='';
+  if(!keys.length){
+    if(fullTrendChartInst){fullTrendChartInst.destroy();fullTrendChartInst=null;}
+    const ctx=document.getElementById('fullTrendChart').getContext('2d');
+    fullTrendChartInst=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'On Hand',data:[],borderColor:'#8b5cf6',borderWidth:2.5,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}});
+    return;
+  }
   keys.forEach((k,i)=>{
     const b=document.createElement('button');
     b.className='trend-pill'+(i===0?' active':'');
@@ -1652,6 +1686,10 @@ function confirmClearData(){
   DATA_SOURCE  = 'cleared';
   LAST_UPLOAD_NAME = '';
 
+  // Destroy all existing charts first
+  [dashTrendChart,catChartInst,fullTrendChartInst,statusDonutChart].forEach(c=>{try{if(c)c.destroy()}catch(e){}});
+  dashTrendChart=catChartInst=fullTrendChartInst=statusDonutChart=null;
+
   // Reset upload UI state
   resetUpload();
   uploadHistory = [];
@@ -1672,12 +1710,16 @@ function confirmClearData(){
     tag.style.color='var(--red)';
   }
 
-  // Refresh entire dashboard with empty arrays (all zeros)
+  // Reset sub-title
+  const sub = document.getElementById('dash-location-sub');
+  if(sub) sub.textContent = 'ONLY@PC GILMORE · No data loaded';
+
+  // Reinit all dashboard components with empty data
   initDashboard();
 
   // Clear inventory & desktop tables
   renderInvTable([]);
-  if(typeof renderDeskTable==='function') renderDeskTable([]);
+  renderDeskTable([]);
 
   // Show success state
   document.getElementById('clear-confirm-state').style.display='none';
