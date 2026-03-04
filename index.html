@@ -74,6 +74,30 @@ input,select{font-family:var(--sans)}
 .logout-btn{background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:5px 9px;font-size:11px;white-space:nowrap}
 .logout-btn:active{border-color:var(--red);color:var(--red)}
 
+/* ═══ CLEAR DATA MODAL ═══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(7,9,15,0.85);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.clear-modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px 28px;width:100%;max-width:420px;box-shadow:0 0 60px rgba(0,0,0,0.6),0 0 0 1px rgba(239,68,68,0.15)}
+.clear-modal-icon{font-size:40px;text-align:center;margin-bottom:16px}
+.clear-modal-title{font-size:18px;font-weight:800;text-align:center;color:var(--text);margin-bottom:8px}
+.clear-modal-sub{font-size:13px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:22px}
+.clear-modal-warning{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.clear-modal-warning p{font-size:12px;color:var(--red);line-height:1.7;font-family:var(--mono)}
+.clear-modal-warning p strong{font-weight:700}
+.clear-modal-actions{display:flex;gap:10px}
+.clear-cancel-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:13px;font-size:13px;font-weight:700;font-family:var(--sans)}
+.clear-cancel-btn:active{background:var(--border)}
+.clear-confirm-btn{flex:1;background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;color:#fff;border-radius:10px;padding:13px;font-size:13px;font-weight:700;font-family:var(--sans);box-shadow:0 4px 14px rgba(220,38,38,0.3)}
+.clear-confirm-btn:active{transform:scale(0.97)}
+.clear-success-state{text-align:center}
+.clear-success-state .cs-icon{font-size:44px;margin-bottom:12px}
+.clear-success-state .cs-title{font-size:16px;font-weight:800;color:var(--green);margin-bottom:6px}
+.clear-success-state .cs-sub{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.clear-done-btn{width:100%;background:var(--green);border:none;color:#fff;border-radius:10px;padding:13px;font-size:13px;font-weight:700;font-family:var(--sans)}
+
+/* Clear Data topbar button */
+.clear-data-btn{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;white-space:nowrap;font-family:var(--mono)}
+.clear-data-btn:active{background:rgba(239,68,68,0.2)}
+
 /* SIDEBAR DRAWER */
 .sidebar-overlay{position:fixed;inset:0;background:rgba(7,9,15,0.75);z-index:199;display:none}
 .sidebar-overlay.open{display:block}
@@ -428,6 +452,7 @@ input,select{font-family:var(--sans)}
         <div class="drawer-av avatar-admin" id="drawer-av"></div>
         <div><div class="drawer-uname" id="drawer-uname"></div><div class="drawer-urole" id="drawer-urole"></div></div>
       </div>
+      <button id="drawer-clear-btn" onclick="closeSidebar();setTimeout(openClearModal,200)" style="display:none;width:100%;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);border-radius:9px;padding:11px;font-size:13px;font-weight:600;font-family:var(--sans);margin-bottom:8px">🗑 Clear All Data</button>
       <button class="drawer-logout" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -454,7 +479,39 @@ input,select{font-family:var(--sans)}
         <span class="user-name" id="user-name-display"></span>
         <span class="user-role-tag" id="user-role-display"></span>
       </div>
+      <button class="clear-data-btn" id="topbar-clear-btn" onclick="openClearModal()" style="display:none">🗑 Clear</button>
       <button class="logout-btn" onclick="doLogout()">Out</button>
+    </div>
+  </div>
+
+  <!-- CLEAR DATA MODAL -->
+  <div id="clear-modal" style="display:none">
+    <div class="modal-overlay" onclick="if(event.target===this)closeClearModal()">
+      <div class="clear-modal">
+        <div id="clear-confirm-state">
+          <div class="clear-modal-icon">🗑️</div>
+          <div class="clear-modal-title">Clear All Data</div>
+          <div class="clear-modal-sub">This will wipe all uploaded inventory data and reset the dashboard to a blank state, ready for a fresh upload.</div>
+          <div class="clear-modal-warning">
+            <p><strong>⚠ What will be cleared:</strong><br>
+            · All uploaded SKUs and quantities<br>
+            · All analytics, KPIs and chart data<br>
+            · All trends and historical snapshots<br>
+            · Upload history log<br><br>
+            <strong>Dashboard will show zeros until a new file is uploaded.</strong></p>
+          </div>
+          <div class="clear-modal-actions">
+            <button class="clear-cancel-btn" onclick="closeClearModal()">Cancel</button>
+            <button class="clear-confirm-btn" onclick="confirmClearData()">🗑 Clear Everything</button>
+          </div>
+        </div>
+        <div id="clear-success-state" class="clear-success-state" style="display:none">
+          <div class="cs-icon">✅</div>
+          <div class="cs-title">Data Cleared</div>
+          <div class="cs-sub">All inventory data has been wiped.<br>Upload a new Excel file to populate the dashboard.</div>
+          <button class="clear-done-btn" onclick="closeClearModal()">Done</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1017,16 +1074,22 @@ function doLogin(){
     document.getElementById('admin-pages').style.display='none';
     document.getElementById('bottom-nav').style.display='none';
     document.getElementById('upload-page').style.display='block';
+    document.getElementById('topbar-clear-btn').style.display='none';
+    document.getElementById('drawer-clear-btn').style.display='none';
     renderUploadHistory();
   } else {
     document.getElementById('admin-pages').style.display='block';
     document.getElementById('upload-page').style.display='none';
     document.getElementById('bottom-nav').style.display='block';
+    document.getElementById('topbar-clear-btn').style.display='block';
+    document.getElementById('drawer-clear-btn').style.display='block';
     initDashboard();
   }
 }
 function doLogout(){
   currentUser=null;
+  document.getElementById('topbar-clear-btn').style.display='none';
+  closeClearModal();
   [dashTrendChart,catChartInst,fullTrendChartInst,statusDonutChart].forEach(c=>{try{if(c)c.destroy()}catch(e){}});
   dashTrendChart=catChartInst=fullTrendChartInst=statusDonutChart=null;
   document.getElementById('app').style.display='none';
@@ -1433,7 +1496,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 let selectedFile = null;
 let parsedData   = null;
 
-const uploadHistory=[
+let uploadHistory=[
   {file:'inventory_2-28-26.xlsx',time:'Feb 28, 2026 — 9:14 AM'},
   {file:'inventory_2-21-26.xlsx',time:'Feb 21, 2026 — 9:02 AM'},
   {file:'inventory_2-14-26.xlsx',time:'Feb 14, 2026 — 9:31 AM'},
@@ -1567,6 +1630,58 @@ function startUpload(){
 
 function resetSteps(){
   [1,2,3,4].forEach(n=>setStep(n,'pending'));
+}
+
+// ════════════════════════════════════════════════════════
+// CLEAR DATA FUNCTIONS
+// ════════════════════════════════════════════════════════
+function openClearModal(){
+  document.getElementById('clear-confirm-state').style.display='block';
+  document.getElementById('clear-success-state').style.display='none';
+  document.getElementById('clear-modal').style.display='block';
+}
+function closeClearModal(){
+  document.getElementById('clear-modal').style.display='none';
+}
+function confirmClearData(){
+  // Wipe all data to empty state
+  ALL_ITEMS   = [];
+  TRENDS_DATA = {};
+  TREND_LABELS      = [];
+  TREND_LABELS_FULL = [];
+  DATA_SOURCE  = 'cleared';
+  LAST_UPLOAD_NAME = '';
+
+  // Reset upload UI state
+  resetUpload();
+  uploadHistory = [];
+  renderUploadHistory();
+
+  // Reset banner to empty state
+  const banner = document.getElementById('data-source-banner');
+  const dsbText = document.getElementById('dsb-text');
+  if(banner){
+    banner.className = 'data-source-banner';
+    banner.style.background='rgba(239,68,68,0.06)';
+    banner.style.borderColor='rgba(239,68,68,0.2)';
+    banner.style.color='var(--red)';
+    dsbText.innerHTML='No data loaded — upload a new Excel file to populate the dashboard';
+    const tag = banner.querySelector('.dsb-tag');
+    tag.textContent='EMPTY';
+    tag.style.background='rgba(239,68,68,0.15)';
+    tag.style.color='var(--red)';
+  }
+
+  // Refresh entire dashboard with empty arrays (all zeros)
+  initDashboard();
+
+  // Clear inventory & desktop tables
+  renderInvTable([]);
+  if(typeof renderDeskTable==='function') renderDeskTable([]);
+
+  // Show success state
+  document.getElementById('clear-confirm-state').style.display='none';
+  document.getElementById('clear-success-state').style.display='block';
 }
 
 function resetUpload(){
