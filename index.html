@@ -191,6 +191,7 @@ input,select{font-family:var(--sans)}
   font-size:11px;font-family:var(--mono);color:var(--green);
 }
 .data-source-banner.default{background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);color:var(--accent)}
+.data-source-banner.empty{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25);color:var(--red)}
 .dsb-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
 .dsb-text{flex:1}
 .dsb-tag{font-size:9px;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:4px;opacity:0.7}
@@ -571,9 +572,9 @@ input,select{font-family:var(--sans)}
 
         <!-- Data Source Banner -->
         <div class="data-source-banner default" id="data-source-banner">
-          <div class="dsb-dot"></div>
+          <div class="dsb-dot" id="dsb-dot"></div>
           <span class="dsb-text" id="dsb-text">Showing built-in snapshot data (Mar 3, 2026)</span>
-          <span class="dsb-tag">DEFAULT</span>
+          <span class="dsb-tag" id="dsb-tag">DEFAULT</span>
         </div>
 
         <!-- AI STOCK INTELLIGENCE -->
@@ -989,6 +990,7 @@ function applyUploadedData(parsed, filename){
   const dsbText = document.getElementById('dsb-text');
   if(banner){
     banner.classList.remove('default');
+    banner.classList.remove('empty');
     dsbText.innerHTML = `Live data from <strong>${filename}</strong> — ${parsed.items.length} SKUs loaded`;
     banner.querySelector('.dsb-tag').textContent = 'LIVE';
   }
@@ -1234,7 +1236,7 @@ function initStatusBreakdown(){
   const ctx=document.getElementById('statusDonutChart').getContext('2d');
 
   // Empty state — show a grey placeholder donut
-  if(!data.length){
+  if(!data.length || ALL_ITEMS.length === 0){
     statusDonutChart=new Chart(ctx,{
       type:'doughnut',
       data:{labels:['No Data'],datasets:[{data:[1],backgroundColor:['rgba(75,96,128,0.15)'],borderColor:['#1f2d3d'],borderWidth:2}]},
@@ -1297,10 +1299,20 @@ function initTrendPills(){
   const keys=Object.keys(TRENDS_DATA);
   const pp=document.getElementById('dash-trend-pills');
   pp.innerHTML='';
-  if(!keys.length){
+  if(!keys.length || ALL_ITEMS.length === 0){
+    pp.innerHTML='<span style="color:var(--text3);font-size:11px;padding:8px;">No trend data available</span>';
     if(dashTrendChart){dashTrendChart.destroy();dashTrendChart=null;}
     const ctx=document.getElementById('dashTrendChart').getContext('2d');
-    dashTrendChart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'On Hand',data:[],borderColor:'#06b6d4',borderWidth:2,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}});
+    dashTrendChart=new Chart(ctx,{
+      type:'line',
+      data:{labels:['No Data'],datasets:[{data:[0],borderColor:'#4b6080',borderWidth:2}]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{x:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.3)'}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.3)'},min:0}}
+      }
+    });
     return;
   }
   keys.slice(0,15).forEach((k,i)=>{
@@ -1334,6 +1346,24 @@ function updateDashTrend(item){
 // CATEGORY CHART
 // ════════════════════════════════════════════════════════
 function initCatChart(){
+  // Handle empty state
+  if(ALL_ITEMS.length === 0){
+    if(catChartInst){catChartInst.destroy();catChartInst=null;}
+    const ctx=document.getElementById('catChart').getContext('2d');
+    catChartInst=new Chart(ctx,{
+      type:'bar',
+      data:{labels:['No Data'],datasets:[{data:[0],backgroundColor:'rgba(75,96,128,0.2)',borderColor:'#4b6080',borderWidth:1}]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{x:{ticks:{color:'#4b6080'},grid:{display:false}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.3)'},min:0}}
+      }
+    });
+    document.getElementById('cat-bars-div').innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">Upload data to see category breakdown</div>';
+    return;
+  }
+
   const cats={
     'Processors':ALL_ITEMS.filter(x=>/PROCESSOR|RYZEN|CORE I[3579]|CORE ULTRA/i.test(x['Item Name'])),
     'RAM':ALL_ITEMS.filter(x=>/\bRAM\b|DDR[45]|KF432|DIMM/i.test(x['Item Name'])),
@@ -1443,10 +1473,20 @@ function initFullTrends(){
   const keys=Object.keys(TRENDS_DATA);
   const pp=document.getElementById('trends-pills');
   pp.innerHTML='';
-  if(!keys.length){
+  if(!keys.length || ALL_ITEMS.length === 0){
+    pp.innerHTML='<span style="color:var(--text3);font-size:11px;padding:8px;">No trend data available</span>';
     if(fullTrendChartInst){fullTrendChartInst.destroy();fullTrendChartInst=null;}
     const ctx=document.getElementById('fullTrendChart').getContext('2d');
-    fullTrendChartInst=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'On Hand',data:[],borderColor:'#8b5cf6',borderWidth:2.5,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}});
+    fullTrendChartInst=new Chart(ctx,{
+      type:'line',
+      data:{labels:['No Data'],datasets:[{data:[0],borderColor:'#4b6080',borderWidth:2.5}]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{x:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.3)'}},y:{ticks:{color:'#4b6080'},grid:{color:'rgba(31,45,61,0.3)'},min:0}}
+      }
+    });
     return;
   }
   keys.forEach((k,i)=>{
@@ -1667,16 +1707,18 @@ function resetSteps(){
 }
 
 // ════════════════════════════════════════════════════════
-// CLEAR DATA FUNCTIONS
+// CLEAR DATA FUNCTIONS — FIXED VERSION
 // ════════════════════════════════════════════════════════
 function openClearModal(){
   document.getElementById('clear-confirm-state').style.display='block';
   document.getElementById('clear-success-state').style.display='none';
   document.getElementById('clear-modal').style.display='block';
 }
+
 function closeClearModal(){
   document.getElementById('clear-modal').style.display='none';
 }
+
 function confirmClearData(){
   // Wipe all data to empty state
   ALL_ITEMS   = [];
@@ -1687,7 +1729,9 @@ function confirmClearData(){
   LAST_UPLOAD_NAME = '';
 
   // Destroy all existing charts first
-  [dashTrendChart,catChartInst,fullTrendChartInst,statusDonutChart].forEach(c=>{try{if(c)c.destroy()}catch(e){}});
+  [dashTrendChart,catChartInst,fullTrendChartInst,statusDonutChart].forEach(c=>{
+    try{if(c)c.destroy()}catch(e){}
+  });
   dashTrendChart=catChartInst=fullTrendChartInst=statusDonutChart=null;
 
   // Reset upload UI state
@@ -1695,27 +1739,42 @@ function confirmClearData(){
   uploadHistory = [];
   renderUploadHistory();
 
-  // Reset banner to empty state
+  // Reset banner to empty state - FIXED
   const banner = document.getElementById('data-source-banner');
   const dsbText = document.getElementById('dsb-text');
+  const dsbDot = document.getElementById('dsb-dot');
+  const dsbTag = document.getElementById('dsb-tag');
+  
   if(banner){
-    banner.className = 'data-source-banner';
-    banner.style.background='rgba(239,68,68,0.06)';
-    banner.style.borderColor='rgba(239,68,68,0.2)';
-    banner.style.color='var(--red)';
-    dsbText.innerHTML='No data loaded — upload a new Excel file to populate the dashboard';
-    const tag = banner.querySelector('.dsb-tag');
-    tag.textContent='EMPTY';
-    tag.style.background='rgba(239,68,68,0.15)';
-    tag.style.color='var(--red)';
+    banner.className = 'data-source-banner empty';
+    dsbText.innerHTML = '⚠️ No data loaded — upload a new Excel file to populate the dashboard';
+    if(dsbTag) dsbTag.textContent = 'EMPTY';
+    if(dsbDot) dsbDot.style.background = 'var(--red)';
   }
 
   // Reset sub-title
   const sub = document.getElementById('dash-location-sub');
   if(sub) sub.textContent = 'ONLY@PC GILMORE · No data loaded';
 
-  // Reinit all dashboard components with empty data
-  initDashboard();
+  // Clear panels first
+  document.getElementById('critical-panel').innerHTML = '';
+  document.getElementById('low-panel').innerHTML = '';
+  
+  // Reset KPI cards to zero
+  document.getElementById('kpi-total').textContent = '0';
+  document.getElementById('kpi-fast').textContent = '0';
+  document.getElementById('kpi-restock').textContent = '0';
+  document.getElementById('kpi-aging').textContent = '0';
+  document.getElementById('out-badge').textContent = '0';
+  document.getElementById('low-badge').textContent = '0';
+  document.getElementById('sdc-total').textContent = '0';
+  document.getElementById('status-total-units').textContent = '0 units';
+
+  // Reinit dashboard with empty state - this now handles empty data properly
+  renderInsights();
+  initStatusBreakdown();
+  initTrendPills();
+  initCatChart();
 
   // Clear inventory & desktop tables
   renderInvTable([]);
