@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ONLY@PC — Inventory Intelligence</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -138,6 +139,12 @@ input,select{font-family:var(--sans)}
 .success-icon{font-size:44px;margin-bottom:10px}
 .success-text{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px}
 .success-sub{font-size:12px;color:var(--text2)}
+.upload-parse-summary{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin:14px 0;text-align:left}
+.parse-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.parse-row:last-child{border:none}
+.parse-label{color:var(--text2)}
+.parse-value{font-family:var(--mono);font-weight:700;color:var(--green)}
+.upload-error-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:14px;margin-top:14px;font-size:12px;color:var(--red);display:none}
 .upload-history{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
 .upload-hist-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
 .history-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
@@ -151,6 +158,18 @@ input,select{font-family:var(--sans)}
 .page-title{font-size:19px;font-weight:700}
 .page-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .date-badge{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:11px;font-family:var(--mono);color:var(--text2);white-space:nowrap;flex-shrink:0}
+
+/* data-source banner */
+.data-source-banner{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);
+  border-radius:9px;padding:8px 12px;margin-bottom:14px;
+  font-size:11px;font-family:var(--mono);color:var(--green);
+}
+.data-source-banner.default{background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);color:var(--accent)}
+.dsb-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.dsb-text{flex:1}
+.dsb-tag{font-size:9px;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:4px;opacity:0.7}
 
 /* ═══ AI INTELLIGENCE PANEL ═══ */
 .ai-panel{
@@ -323,41 +342,24 @@ input,select{font-family:var(--sans)}
   .bottom-nav{display:block}
   .main-content{padding:12px 12px calc(var(--bnav-h) + 12px)}
   .kpi-value{font-size:24px}
-
-  /* AI panel — single column, smaller text */
   .ai-insights-grid{grid-template-columns:1fr !important}
   .ai-insight-text{font-size:11px}
   .ai-panel{padding:12px}
   .ai-badge{font-size:9px;padding:3px 9px}
-
-  /* Page header — stack on tiny screens */
   .page-header{flex-direction:column;align-items:flex-start}
   .date-badge{font-size:10px;padding:5px 10px;align-self:flex-start}
-
-  /* Status breakdown — stack vertically */
   .status-bd-body{flex-direction:column;align-items:center;gap:14px}
   .status-donut-wrap{width:110px;height:110px}
   .sdc-total{font-size:18px}
   .status-legend{width:100%;gap:9px}
   .legend-row{justify-content:space-between}
-
-  /* Tables — hide committed col, truncate names */
   .tbl td:first-child,.tbl th:first-child{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tbl td:nth-child(4),.tbl th:nth-child(4){display:none}
-
-  /* Trend pills — horizontal scroll, no wrap */
   .trend-pills{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}
   .trend-pill{flex-shrink:0}
-
-  /* Alert name overflow */
   .alert-name{max-width:220px}
-
-  /* KPI sub text smaller */
   .kpi-sub{font-size:9px}
-
-  /* Search row */
   .search-row{flex-wrap:nowrap}
-  .filter-select{font-size:10px;padding:7px 7px}
 }
 @media(min-width:768px){
   .topbar-nav{display:flex}
@@ -474,6 +476,7 @@ input,select{font-family:var(--sans)}
             <div class="dz-text" id="dz-text">Tap to select inventory file</div>
             <div class="dz-sub" id="dz-sub">Accepts .xlsx, .xls, .csv</div>
           </div>
+          <div class="upload-error-box" id="upload-error-box"></div>
           <button class="upload-action-btn" id="upload-btn" onclick="startUpload()">⬆ UPLOAD & SYNC DASHBOARD</button>
           <div class="upload-progress" id="upload-progress">
             <div class="progress-step"><div class="step-icon step-pending" id="step1-icon">1</div><span>Reading file...</span></div>
@@ -485,6 +488,7 @@ input,select{font-family:var(--sans)}
             <div class="success-icon">✅</div>
             <div class="success-text">Dashboard Updated!</div>
             <div class="success-sub">Sir Joseph's dashboard now reflects the latest data.</div>
+            <div class="upload-parse-summary" id="upload-parse-summary"></div>
             <button onclick="resetUpload()" style="margin-top:14px;width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:9px;padding:12px;font-size:13px;font-family:var(--sans);font-weight:600">Upload Another File</button>
           </div>
           <div class="upload-history">
@@ -503,9 +507,16 @@ input,select{font-family:var(--sans)}
         <div class="page-header">
           <div>
             <div class="page-title">Inventory Overview</div>
-            <div class="page-sub">ONLY@PC GILMORE · Mar 3, 2026</div>
+            <div class="page-sub" id="dash-location-sub">ONLY@PC GILMORE · Mar 3, 2026</div>
           </div>
           <div class="date-badge" id="dash-clock-badge">09:13</div>
+        </div>
+
+        <!-- Data Source Banner -->
+        <div class="data-source-banner default" id="data-source-banner">
+          <div class="dsb-dot"></div>
+          <span class="dsb-text" id="dsb-text">Showing built-in snapshot data (Mar 3, 2026)</span>
+          <span class="dsb-tag">DEFAULT</span>
         </div>
 
         <!-- AI STOCK INTELLIGENCE -->
@@ -515,9 +526,7 @@ input,select{font-family:var(--sans)}
             <div class="ai-panel-title"></div>
             <button class="ai-refresh-btn" onclick="refreshInsights()">↻ Refresh</button>
           </div>
-          <div class="ai-insights-grid" id="ai-insights-grid">
-            <!-- populated by JS -->
-          </div>
+          <div class="ai-insights-grid" id="ai-insights-grid"></div>
         </div>
 
         <!-- KPI CARDS -->
@@ -666,7 +675,7 @@ input,select{font-family:var(--sans)}
         <div class="page-header">
           <div>
             <div class="page-title">Stock Trends</div>
-            <div class="page-sub">Historical on-hand movement · 2025–2026</div>
+            <div class="page-sub">Historical on-hand movement</div>
           </div>
         </div>
         <div class="card">
@@ -733,87 +742,236 @@ input,select{font-family:var(--sans)}
 </div>
 
 <script>
-// ════════════════════════════════════════
-// DATA — Sheet labels → proper date strings
-// Sheet numbers from source: 2,9,17,25,33,41,49,57,65,73,81,89,97,105,113,121,129,137,145,153,161,169,177,185,193,201,209,215
-// Mapped to actual snapshot dates derived from POS history
-// ════════════════════════════════════════
-const SHEET_DATE_MAP = {
-  2:   'Jun 17, 2025',  9:   'Jun 24, 2025',
-  17:  'Jul 02, 2025',  25:  'Jul 10, 2025',
-  33:  'Jul 18, 2025',  41:  'Jul 26, 2025',
-  49:  'Aug 03, 2025',  57:  'Aug 11, 2025',
-  65:  'Aug 19, 2025',  73:  'Aug 27, 2025',
-  81:  'Sep 04, 2025',  89:  'Sep 13, 2025',
-  97:  'Sep 24, 2025',  105: 'Oct 05, 2025',
-  113: 'Oct 16, 2025',  121: 'Oct 26, 2025',
-  129: 'Nov 06, 2025',  137: 'Nov 17, 2025',
-  145: 'Nov 28, 2025',  153: 'Dec 09, 2025',
-  161: 'Dec 20, 2025',  169: 'Dec 31, 2025',
-  177: 'Jan 10, 2026',  185: 'Jan 21, 2026',
-  193: 'Feb 01, 2026',  201: 'Feb 12, 2026',
-  209: 'Feb 23, 2026',  215: 'Mar 03, 2026'
+// ════════════════════════════════════════════════════════
+// BUILT-IN FALLBACK DATA (Mar 3, 2026 snapshot)
+// ════════════════════════════════════════════════════════
+const BUILTIN_ITEMS = [{"Item Name":"RUBBERBOOTS CAT5E","On Hand":662,"Available":662,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"GEN CAT5E UTP CABLE/ METER","On Hand":462,"Available":462,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GEN CAT6E UTP CABLE/ METER","On Hand":305,"Available":305,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BNC CONNECTOR PLUG TYPE","On Hand":186,"Available":186,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"RJ45 CAT5E CONNECTOR","On Hand":175,"Available":175,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"C-CLAMP 20MM","On Hand":143,"Available":143,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"C-CLAMP 25MM","On Hand":137,"Available":137,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"HID THIN CARD W/ ENCODER NUM.","On Hand":100,"Available":100,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"8 CORE SINGLE MODE","On Hand":100,"Available":100,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"UY CONNECTOR","On Hand":90,"Available":90,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DP TO VGA ADAPTER","On Hand":90,"Available":90,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DC PLUG CONNECTOR FEMALE","On Hand":85,"Available":85,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"AMP RJ45 CAT5E CONNECTOR","On Hand":84,"Available":81,"Committed":3,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"RJ45 COUPLER ORDINARY","On Hand":79,"Available":79,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"LEXAR 8GB 2666 DDR4","On Hand":77,"Available":45,"Committed":32,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BNC CONNECTOR SCREWLESS","On Hand":74,"Available":74,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"YGT MARS 8 CASING W/ PSU","On Hand":63,"Available":43,"Committed":20,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"A4TECH KRS-8372 USB KB/MOUSE","On Hand":61,"Available":28,"Committed":33,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"YGT TN20 20\" MONITOR","On Hand":58,"Available":39,"Committed":19,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"PUDDING KEYCAPS","On Hand":49,"Available":49,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"C-CLAMP 30MM","On Hand":48,"Available":48,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"LEXAR NQ100 2.5\" 240GB SATA SS","On Hand":48,"Available":21,"Committed":27,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SWITCH PULLERS","On Hand":48,"Available":48,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"ARCTIC F12 PMW PST (BLACK)","On Hand":42,"Available":42,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"SEAGATE EXOS 3.5\" 4TB SATA HDD","On Hand":39,"Available":0,"Committed":39,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"AMDRYZEN ORIGINAL HEATSINKFAN","On Hand":36,"Available":36,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"RAZER MOUSEPAD SMALL","On Hand":30,"Available":8,"Committed":22,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ELBOW BIG","On Hand":28,"Available":28,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"GIGABYTE A520M K V2","On Hand":27,"Available":23,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON KF432C16BB/8 RAM","On Hand":27,"Available":27,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL HEATSINK FAN 10TH11THGEN","On Hand":26,"Available":26,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"2GANG FACE PLATE","On Hand":26,"Available":26,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"ORASHARE 3000MAH MINI POWER","On Hand":24,"Available":24,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS WINDOWS 11 PRO 64BIT","On Hand":22,"Available":17,"Committed":5,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN ORIGINAL HEATSINKFAN","On Hand":21,"Available":21,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"RAPOO TX01 EARPHONE","On Hand":21,"Available":21,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SECURE AVR 500W","On Hand":20,"Available":0,"Committed":20,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MSI PRO H610M-S DDR4","On Hand":20,"Available":18,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADLINK C5208 DP TO HDMI 1.8M C","On Hand":20,"Available":5,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"DEEPCOOL GAMMAXX AG400 PLUS","On Hand":19,"Available":19,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE ULTRA 5 225 LGA1851","On Hand":18,"Available":18,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE H810M K","On Hand":18,"Available":18,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG LS27F320GAEXXP 27\" MON","On Hand":17,"Available":0,"Committed":17,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ORASHARE 10000MAH POWERBANK","On Hand":17,"Available":17,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LEXAR NM620 256GB M.2 SSD","On Hand":16,"Available":13,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMP 2GANG FACEPLATE","On Hand":16,"Available":16,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"LOGITECH H390 HEADSET","On Hand":15,"Available":3,"Committed":12,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LOGITECH C922 PRO WEBCAM","On Hand":15,"Available":0,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"CORSAIR CX750 750W 80PLUS BRON","On Hand":15,"Available":15,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i3-10105 PROCESSOR","On Hand":15,"Available":0,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON ODYSSEY 165-3 W/ PSU","On Hand":14,"Available":14,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BIOSTAR H510MHP-E 3.0","On Hand":14,"Available":3,"Committed":11,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"USB 2.0 TO 1284 1.5M","On Hand":14,"Available":14,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DEEPCOOL D-SHIELD V2 ATX CASE","On Hand":13,"Available":12,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY M066 HOLLOW MOUSE WHITE","On Hand":13,"Available":13,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DP TO HDMI 1.8M ADAPTER","On Hand":13,"Available":13,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"RJ45 CAT6E METAL SHIELDED","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"AVIATOR CABLES","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"GIGABYTE B550M DS3H AC","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"JINHUA IH580E DP CABLE 1.5M","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"MSI RTX3070 GAMING X TRIO","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"ABS KEYCAPS","On Hand":11,"Available":11,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"TRANSCEND 16GB 5600 DDR5","On Hand":11,"Available":11,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TPLINK ARCHER T2U AC600 USB AD","On Hand":10,"Available":9,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"YGT V100 WHITE CASE W/ PSU","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON FIT FU-4BL CASING","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GALAX RTX3060Ti 8GB VIDEOCARD","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"GELID GP ULTIMATE THERMAL PAD","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA UV128 64GB FLASHDRIVE","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 5600X PROCESSOR","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 3 3200G PROCESSOR","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"THERMAL PASTE SMALL","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LEXAR NQ790 1TB M.2 SSD","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON LX-310 RIBBON","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"A4TECH OP-720 USB MOUSE","On Hand":9,"Available":8,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY META A200 MATX BLACK CA","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HDMI CABLE 1.5M REDMESH","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA LUXE ATX WHITE","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN FAN 12CM SINGLE FAN","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY STX240 4 in 1 COMBO BLA","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"VENTION HDMI CABLE 1.5M BLK/Y","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON L3210 PRINTER","On Hand":8,"Available":7,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY GS650 650W 80PLUS BRONZ","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 5600GT PROCESSOR","On Hand":8,"Available":4,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA UV128 32GB FLASHDRIVE","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON ODYSSEY 165-5 W/ PSU","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON ODYSSEY 165-1","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS WINDOWS 11 PRO STICKER","On Hand":7,"Available":5,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ASUS TUF RTX3070 8GB GAMING","On Hand":7,"Available":7,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"BIOSTAR H510MHP-E 3.0 WIFI","On Hand":6,"Available":0,"Committed":6,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MSI PRO B760M-A WIFI DDR4","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LEXAR THOR 16GB 3200 DDR4","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY HN820 HEADPHONES","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SEAGATE 3.5 1TB SATA HDD","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NVISION N2455 PRO 23.8\"MONITOR","On Hand":6,"Available":5,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NVISION N2255 PRO 21.5\" IPS MO","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA LUXE ATX BLACK","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA M-ATX BLACK","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE RTX3070 8GB VIDEOCARD","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"EPSON L3250 PRINTER","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON NV3 500GB M.2 NVME","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON 003 YELLOW INK","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"DARKFLASH A305 ATX BLACK CASE","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ELECTRON 700W POWERSUPPLY","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG 8GB 56000 SODIMM","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 7 5700G PROCESSOR","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TRANSCEND 8GB 5600 DDR5","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i5-10400 PROCESSOR","On Hand":5,"Available":3,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i3-12100 PROCESSOR","On Hand":5,"Available":4,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i5-12400 PROCESSOR","On Hand":5,"Available":1,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"A4TECH HU-30 HEADSET","On Hand":4,"Available":-11,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"VENTION HDMI CABLE 2M 4K BLK/Y","On Hand":4,"Available":1,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HIKVISION DS-2CD1347G2-L DOME","On Hand":4,"Available":0,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSPEC 2.5\" 480GB SSD","On Hand":4,"Available":2,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COLORFUL RTX3060TI ULTRA WHITE","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"PNY RTX3060Ti 8GB VIDEOCARD","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"MSI RTX3070 VENTUS 3X OC","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"LEXAR NQ790 1TB M.2 GEN4 SSD","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SECURE 650VA UPS","On Hand":3,"Available":1,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TEAMGROUP MP33 PRO 1TB M.2 SSD","On Hand":3,"Available":2,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BELDEN CAT6 E UTP CABLE","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TPLINK TL-SG1024D 24PORT GIGAB","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA M-ATX WHITE CA","On Hand":3,"Available":3,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"RAPOO M10 PLUS WLESS MOUSE","On Hand":3,"Available":3,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"WESTERN DIGITAL PURPLE PRO 3.5","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON L121 PRINTER","On Hand":3,"Available":3,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE H610M K DDR4","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HIKSEMI ARMOR 8GB 3200 DDR4","On Hand":3,"Available":2,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 5600 PROCESSOR","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HIKSEMI WAVE 256GB SSD SATA","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"UPHERE N10 CPU COOLER","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE 2.5\" 480GB SATA SSD","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON 120GB M.2 SSD","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"AMD RYZEN 7 5700X PROCESSOR","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG SSD 980 250GB M.2 SSD","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"4GB DDR4 SODIMM FOR NOTEBOOK","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SEAGATE BARRACUDA 3.5\" 2TB SAT","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"CORSAIR CX550 550W 80PLUS BRON","On Hand":2,"Available":0,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS OFFICE HOME & BUSINESS 2024","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i7-7700 PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i7-12700K PROCESSOR","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON NV3 500GB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INNO3D RTX3070 8GB TWIN X2 OC","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"INPLAY S20 CPU COOLER","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i3-7100 PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 4500 PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA LEGEND 860 2TB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA LEGEND 860 1TB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"APACER 512GB M.2 SSD","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG 870 EVO 2.5\" 250GB SSD","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS WINDOWS 11 HOME 64BIT","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LG 32MR50C-B 32\" CURVED MONITO","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SECURE 1000VA UPS","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TPLINK ARCHER TX50E AX3000 ADA","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG LS24D300GAEXXP 24\" MON","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE H610M H V3 DDR4","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COLORFUL RTX3060Ti VIDEOCARD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 7 9700X PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"256GB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA SU650 2.5\" 512GB SATA SS","On Hand":0,"Available":-1,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRIX NC3FXX POLE FEMALE CON","On Hand":0,"Available":-70,"Committed":70,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRIX NC3MXX POLE MALE CONNE","On Hand":0,"Available":-70,"Committed":70,"STATUS LOCATION":"COMMON ITEM FAST MOVING"}];
+
+const BUILTIN_TRENDS = {
+  "LEXAR 8GB 2666 DDR4":            [217,183,150,121,98,77],
+  "AMDRYZEN ORIGINAL HEATSINKFAN":  [36,36,36,36,36,36],
+  "KINGSTON KF432C16BB/8 RAM":      [0,0,34,31,27,27],
+  "AMD RYZEN ORIGINAL HEATSINKFAN": [21,21,21,21,21,21],
+  "MSI PRO H610M-S DDR4":           [5,5,12,10,23,20],
+  "INTEL CORE ULTRA 5 225 LGA1851": [0,0,0,20,19,18],
+  "LEXAR NM620 256GB M.2 SSD":      [12,25,21,19,17,16],
+  "INTEL CORE i3-10105 PROCESSOR":  [1,1,21,0,0,15],
+  "MSI RTX3070 GAMING X TRIO":      [12,12,12,12,12,12],
+  "TRANSCEND 16GB 5600 DDR5":       [0,0,0,15,12,11],
+  "YGT V100 WHITE CASE W/ PSU":     [10,10,10,10,10,10],
+  "GALAX RTX3060Ti 8GB VIDEOCARD":  [12,12,12,11,11,10],
+  "AMD RYZEN 5 5600X PROCESSOR":    [10,10,10,10,10,10],
+  "AMD RYZEN 3 3200G PROCESSOR":    [18,17,16,15,13,10],
+  "LEXAR NQ790 1TB M.2 SSD":        [1,1,0,11,10,9],
+  "AMD RYZEN 5 5600GT PROCESSOR":   [19,14,11,10,9,8],
+  "ASUS TUF RTX3070 8GB GAMING":    [8,8,7,7,7,7],
+  "MSI PRO B760M-A WIFI DDR4":      [7,7,7,7,6,6],
+  "LEXAR THOR 16GB 3200 DDR4":      [6,16,11,8,7,6],
+  "GIGABYTE RTX3070 8GB VIDEOCARD": [5,5,5,5,5,5],
+  "AMD RYZEN 7 5700G PROCESSOR":    [9,6,6,6,5,5],
+  "TRANSCEND 8GB 5600 DDR5":        [0,0,0,5,5,5],
+  "INTEL CORE i5-10400 PROCESSOR":  [0,4,9,7,6,5],
+  "INTEL CORE i3-12100 PROCESSOR":  [16,2,7,7,7,5],
+  "INTEL CORE i5-12400 PROCESSOR":  [24,20,20,19,12,5],
+  "KINGSPEC 2.5\" 480GB SSD":       [0,0,0,0,5,4],
+  "COLORFUL RTX3060TI ULTRA WHITE": [0,0,0,4,4,4],
+  "PNY RTX3060Ti 8GB VIDEOCARD":    [5,5,5,5,5,4],
+  "MSI RTX3070 VENTUS 3X OC":       [4,4,4,4,4,4],
+  "LEXAR NQ790 1TB M.2 GEN4 SSD":   [0,0,0,4,4,4]
 };
 
-// 2026 subset (last 6 snapshots) shown in trend charts by default
-const SHEET_LABELS_2026 = [177,185,193,201,209,215];
-const DATE_LABELS_2026   = SHEET_LABELS_2026.map(s => {
-  const d = SHEET_DATE_MAP[s];
-  // Short label e.g. "Jan 10"
-  return d ? d.replace(/, 2026/,'').replace(/, 2025/,'') : s;
-});
-const DATE_FULL_2026 = SHEET_LABELS_2026.map(s => SHEET_DATE_MAP[s] || String(s));
+const BUILTIN_DATE_LABELS = ['Jan 10','Jan 21','Feb 01','Feb 12','Feb 23','Mar 03'];
+const BUILTIN_DATE_FULL   = ['Jan 10, 2026','Jan 21, 2026','Feb 01, 2026','Feb 12, 2026','Feb 23, 2026','Mar 03, 2026'];
 
-// All 28 snapshots
-const ALL_SHEETS    = [2,9,17,25,33,41,49,57,65,73,81,89,97,105,113,121,129,137,145,153,161,169,177,185,193,201,209,215];
-const DATE_LABELS_ALL = ALL_SHEETS.map(s => {
-  const d = SHEET_DATE_MAP[s];
-  if(!d) return String(s);
-  const parts = d.split(' ');
-  return parts[0]+' '+parts[1].replace(',','');
-});
-const DATE_FULL_ALL = ALL_SHEETS.map(s => SHEET_DATE_MAP[s] || String(s));
+// ════════════════════════════════════════════════════════
+// LIVE DATA STATE — mutated by Excel upload
+// ════════════════════════════════════════════════════════
+let ALL_ITEMS   = BUILTIN_ITEMS.slice();
+let TRENDS_DATA = Object.assign({}, BUILTIN_TRENDS);
+let TREND_LABELS     = BUILTIN_DATE_LABELS.slice();
+let TREND_LABELS_FULL= BUILTIN_DATE_FULL.slice();
+let DATA_SOURCE = 'default'; // 'default' | 'uploaded'
+let LAST_UPLOAD_NAME = '';
 
-const TRENDS_2026 = {
-  "LEXAR 8GB 2666 DDR4":             [217,183,150,121,98,77],
-  "AMDRYZEN ORIGINAL HEATSINKFAN":   [36,36,36,36,36,36],
-  "KINGSTON KF432C16BB/8 RAM":       [0,0,34,31,27,27],
-  "AMD RYZEN ORIGINAL HEATSINKFAN":  [21,21,21,21,21,21],
-  "MSI PRO H610M-S DDR4":            [5,5,12,10,23,20],
-  "INTEL CORE ULTRA 5 225 LGA1851":  [0,0,0,20,19,18],
-  "LEXAR NM620 256GB M.2 SSD":       [12,25,21,19,17,16],
-  "INTEL CORE i3-10105 PROCESSOR":   [1,1,21,0,0,15],
-  "MSI RTX3070 GAMING X TRIO":       [12,12,12,12,12,12],
-  "TRANSCEND 16GB 5600 DDR5":        [0,0,0,15,12,11],
-  "YGT V100 WHITE CASE W/ PSU":      [10,10,10,10,10,10],
-  "GALAX RTX3060Ti 8GB VIDEOCARD":   [12,12,12,11,11,10],
-  "AMD RYZEN 5 5600X PROCESSOR":     [10,10,10,10,10,10],
-  "AMD RYZEN 3 3200G PROCESSOR":     [18,17,16,15,13,10],
-  "LEXAR NQ790 1TB M.2 SSD":         [1,1,0,11,10,9],
-  "AMD RYZEN 5 5600GT PROCESSOR":    [19,14,11,10,9,8],
-  "ASUS TUF RTX3070 8GB GAMING":     [8,8,7,7,7,7],
-  "MSI PRO B760M-A WIFI DDR4":       [7,7,7,7,6,6],
-  "LEXAR THOR 16GB 3200 DDR4":       [6,16,11,8,7,6],
-  "GIGABYTE RTX3070 8GB VIDEOCARD":  [5,5,5,5,5,5],
-  "AMD RYZEN 7 5700G PROCESSOR":     [9,6,6,6,5,5],
-  "TRANSCEND 8GB 5600 DDR5":         [0,0,0,5,5,5],
-  "INTEL CORE i5-10400 PROCESSOR":   [0,4,9,7,6,5],
-  "INTEL CORE i3-12100 PROCESSOR":   [16,2,7,7,7,5],
-  "INTEL CORE i5-12400 PROCESSOR":   [24,20,20,19,12,5],
-  "KINGSPEC 2.5\" 480GB SSD":        [0,0,0,0,5,4],
-  "COLORFUL RTX3060TI ULTRA WHITE":  [0,0,0,4,4,4],
-  "PNY RTX3060Ti 8GB VIDEOCARD":     [5,5,5,5,5,4],
-  "MSI RTX3070 VENTUS 3X OC":        [4,4,4,4,4,4],
-  "LEXAR NQ790 1TB M.2 GEN4 SSD":    [0,0,0,4,4,4]
-};
+function getDesktopItems(){
+  return ALL_ITEMS.filter(x => /PROCESSOR|RYZEN|CORE I[3579]|CORE ULTRA|DDR[45]|\bRAM\b|KF432|M\.2 SSD|NVME|SATA SSD|RTX|GTX|VIDEOCARD|H610|B760|H810|A520|B550|H510|CASING|CASE.*PSU|W\/.*PSU|CX750|CX550|CORSAIR.*W|COOLER|HEATSINK|DEEPCOOL|DARKFLASH.*COOL/i.test(x['Item Name']));
+}
 
-const ALL_ITEMS = [{"Item Name":"RUBBERBOOTS CAT5E","On Hand":662,"Available":662,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"GEN CAT5E UTP CABLE/ METER","On Hand":462,"Available":462,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GEN CAT6E UTP CABLE/ METER","On Hand":305,"Available":305,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BNC CONNECTOR PLUG TYPE","On Hand":186,"Available":186,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"RJ45 CAT5E CONNECTOR","On Hand":175,"Available":175,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"C-CLAMP 20MM","On Hand":143,"Available":143,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"C-CLAMP 25MM","On Hand":137,"Available":137,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"HID THIN CARD W/ ENCODER NUM.","On Hand":100,"Available":100,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"8 CORE SINGLE MODE","On Hand":100,"Available":100,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"UY CONNECTOR","On Hand":90,"Available":90,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DP TO VGA ADAPTER","On Hand":90,"Available":90,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DC PLUG CONNECTOR FEMALE","On Hand":85,"Available":85,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"AMP RJ45 CAT5E CONNECTOR","On Hand":84,"Available":81,"Committed":3,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"RJ45 COUPLER ORDINARY","On Hand":79,"Available":79,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"LEXAR 8GB 2666 DDR4","On Hand":77,"Available":45,"Committed":32,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BNC CONNECTOR SCREWLESS","On Hand":74,"Available":74,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"YGT MARS 8 CASING W/ PSU","On Hand":63,"Available":43,"Committed":20,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"A4TECH KRS-8372 USB KB/MOUSE","On Hand":61,"Available":28,"Committed":33,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"YGT TN20 20\" MONITOR","On Hand":58,"Available":39,"Committed":19,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"PUDDING KEYCAPS","On Hand":49,"Available":49,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"C-CLAMP 30MM","On Hand":48,"Available":48,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"LEXAR NQ100 2.5\" 240GB SATA SS","On Hand":48,"Available":21,"Committed":27,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SWITCH PULLERS","On Hand":48,"Available":48,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"ARCTIC F12 PMW PST (BLACK)","On Hand":42,"Available":42,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"SEAGATE EXOS 3.5\" 4TB SATA HDD","On Hand":39,"Available":0,"Committed":39,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"AMDRYZEN ORIGINAL HEATSINKFAN","On Hand":36,"Available":36,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"RAZER MOUSEPAD SMALL","On Hand":30,"Available":8,"Committed":22,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ELBOW BIG","On Hand":28,"Available":28,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"GIGABYTE A520M K V2","On Hand":27,"Available":23,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON KF432C16BB/8 RAM","On Hand":27,"Available":27,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL HEATSINK FAN 10TH11THGEN","On Hand":26,"Available":26,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"2GANG FACE PLATE","On Hand":26,"Available":26,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"ORASHARE 3000MAH MINI POWER","On Hand":24,"Available":24,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS WINDOWS 11 PRO 64BIT","On Hand":22,"Available":17,"Committed":5,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN ORIGINAL HEATSINKFAN","On Hand":21,"Available":21,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"RAPOO TX01 EARPHONE","On Hand":21,"Available":21,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SECURE AVR 500W","On Hand":20,"Available":0,"Committed":20,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MSI PRO H610M-S DDR4","On Hand":20,"Available":18,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADLINK C5208 DP TO HDMI 1.8M C","On Hand":20,"Available":5,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"DEEPCOOL GAMMAXX AG400 PLUS","On Hand":19,"Available":19,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE ULTRA 5 225 LGA1851","On Hand":18,"Available":18,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE H810M K","On Hand":18,"Available":18,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG LS27F320GAEXXP 27\" MON","On Hand":17,"Available":0,"Committed":17,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ORASHARE 10000MAH POWERBANK","On Hand":17,"Available":17,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LEXAR NM620 256GB M.2 SSD","On Hand":16,"Available":13,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMP 2GANG FACEPLATE","On Hand":16,"Available":16,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"LOGITECH H390 HEADSET","On Hand":15,"Available":3,"Committed":12,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LOGITECH C922 PRO WEBCAM","On Hand":15,"Available":0,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"CORSAIR CX750 750W 80PLUS BRON","On Hand":15,"Available":15,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i3-10105 PROCESSOR","On Hand":15,"Available":0,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON ODYSSEY 165-3 W/ PSU","On Hand":14,"Available":14,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BIOSTAR H510MHP-E 3.0","On Hand":14,"Available":3,"Committed":11,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"USB 2.0 TO 1284 1.5M","On Hand":14,"Available":14,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DEEPCOOL D-SHIELD V2 ATX CASE","On Hand":13,"Available":12,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY M066 HOLLOW MOUSE WHITE","On Hand":13,"Available":13,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"DP TO HDMI 1.8M ADAPTER","On Hand":13,"Available":13,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"RJ45 CAT6E METAL SHIELDED","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"AVIATOR CABLES","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"GIGABYTE B550M DS3H AC","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"JINHUA IH580E DP CABLE 1.5M","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"MSI RTX3070 GAMING X TRIO","On Hand":12,"Available":12,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"ABS KEYCAPS","On Hand":11,"Available":11,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"TRANSCEND 16GB 5600 DDR5","On Hand":11,"Available":11,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TPLINK ARCHER T2U AC600 USB AD","On Hand":10,"Available":9,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"YGT V100 WHITE CASE W/ PSU","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON FIT FU-4BL CASING","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GALAX RTX3060Ti 8GB VIDEOCARD","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"GELID GP ULTIMATE THERMAL PAD","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA UV128 64GB FLASHDRIVE","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 5600X PROCESSOR","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 3 3200G PROCESSOR","On Hand":10,"Available":10,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"THERMAL PASTE SMALL","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LEXAR NQ790 1TB M.2 SSD","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON LX-310 RIBBON","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"A4TECH OP-720 USB MOUSE","On Hand":9,"Available":8,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY META A200 MATX BLACK CA","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HDMI CABLE 1.5M REDMESH","On Hand":9,"Available":9,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA LUXE ATX WHITE","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN FAN 12CM SINGLE FAN","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY STX240 4 in 1 COMBO BLA","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"VENTION HDMI CABLE 1.5M BLK/Y","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON L3210 PRINTER","On Hand":8,"Available":7,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY GS650 650W 80PLUS BRONZ","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 5600GT PROCESSOR","On Hand":8,"Available":4,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA UV128 32GB FLASHDRIVE","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON ODYSSEY 165-5 W/ PSU","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRON ODYSSEY 165-1","On Hand":8,"Available":8,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS WINDOWS 11 PRO STICKER","On Hand":7,"Available":5,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ASUS TUF RTX3070 8GB GAMING","On Hand":7,"Available":7,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"BIOSTAR H510MHP-E 3.0 WIFI","On Hand":6,"Available":0,"Committed":6,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MSI PRO B760M-A WIFI DDR4","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LEXAR THOR 16GB 3200 DDR4","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INPLAY HN820 HEADPHONES","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SEAGATE 3.5 1TB SATA HDD","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NVISION N2455 PRO 23.8\"MONITOR","On Hand":6,"Available":5,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NVISION N2255 PRO 21.5\" IPS MO","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA LUXE ATX BLACK","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA M-ATX BLACK","On Hand":6,"Available":6,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE RTX3070 8GB VIDEOCARD","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"EPSON L3250 PRINTER","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON NV3 500GB M.2 NVME","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON 003 YELLOW INK","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"DARKFLASH A305 ATX BLACK CASE","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ELECTRON 700W POWERSUPPLY","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG 8GB 56000 SODIMM","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 7 5700G PROCESSOR","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TRANSCEND 8GB 5600 DDR5","On Hand":5,"Available":5,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i5-10400 PROCESSOR","On Hand":5,"Available":3,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i3-12100 PROCESSOR","On Hand":5,"Available":4,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i5-12400 PROCESSOR","On Hand":5,"Available":1,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"A4TECH HU-30 HEADSET","On Hand":4,"Available":-11,"Committed":15,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"VENTION HDMI CABLE 2M 4K BLK/Y","On Hand":4,"Available":1,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HIKVISION DS-2CD1347G2-L DOME","On Hand":4,"Available":0,"Committed":4,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSPEC 2.5\" 480GB SSD","On Hand":4,"Available":2,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COLORFUL RTX3060TI ULTRA WHITE","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"PNY RTX3060Ti 8GB VIDEOCARD","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"MSI RTX3070 VENTUS 3X OC","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"LEXAR NQ790 1TB M.2 GEN4 SSD","On Hand":4,"Available":4,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SECURE 650VA UPS","On Hand":3,"Available":1,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TEAMGROUP MP33 PRO 1TB M.2 SSD","On Hand":3,"Available":2,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"BELDEN CAT6 E UTP CABLE","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TPLINK TL-SG1024D 24PORT GIGAB","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COOLMAN SPECTRA M-ATX WHITE CA","On Hand":3,"Available":3,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"RAPOO M10 PLUS WLESS MOUSE","On Hand":3,"Available":3,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"WESTERN DIGITAL PURPLE PRO 3.5","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"EPSON L121 PRINTER","On Hand":3,"Available":3,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE H610M K DDR4","On Hand":3,"Available":0,"Committed":3,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HIKSEMI ARMOR 8GB 3200 DDR4","On Hand":3,"Available":2,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 5600 PROCESSOR","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"HIKSEMI WAVE 256GB SSD SATA","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"UPHERE N10 CPU COOLER","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE 2.5\" 480GB SATA SSD","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON 120GB M.2 SSD","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"AGING ITEM"},{"Item Name":"AMD RYZEN 7 5700X PROCESSOR","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG SSD 980 250GB M.2 SSD","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"4GB DDR4 SODIMM FOR NOTEBOOK","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SEAGATE BARRACUDA 3.5\" 2TB SAT","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"CORSAIR CX550 550W 80PLUS BRON","On Hand":2,"Available":0,"Committed":2,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS OFFICE HOME & BUSINESS 2024","On Hand":2,"Available":2,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i7-7700 PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i7-12700K PROCESSOR","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"KINGSTON NV3 500GB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INNO3D RTX3070 8GB TWIN X2 OC","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"CONSIGNMENT"},{"Item Name":"INPLAY S20 CPU COOLER","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"INTEL CORE i3-7100 PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 5 4500 PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA LEGEND 860 2TB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA LEGEND 860 1TB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"APACER 512GB M.2 SSD","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG 870 EVO 2.5\" 250GB SSD","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"MS WINDOWS 11 HOME 64BIT","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"LG 32MR50C-B 32\" CURVED MONITO","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SECURE 1000VA UPS","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"TPLINK ARCHER TX50E AX3000 ADA","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"SAMSUNG LS24D300GAEXXP 24\" MON","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"GIGABYTE H610M H V3 DDR4","On Hand":1,"Available":0,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"COLORFUL RTX3060Ti VIDEOCARD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"AMD RYZEN 7 9700X PROCESSOR","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"256GB M.2 SSD","On Hand":1,"Available":1,"Committed":0,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"ADATA SU650 2.5\" 512GB SATA SS","On Hand":0,"Available":-1,"Committed":1,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRIX NC3FXX POLE FEMALE CON","On Hand":0,"Available":-70,"Committed":70,"STATUS LOCATION":"COMMON ITEM FAST MOVING"},{"Item Name":"NEUTRIX NC3MXX POLE MALE CONNE","On Hand":0,"Available":-70,"Committed":70,"STATUS LOCATION":"COMMON ITEM FAST MOVING"}];
+// ════════════════════════════════════════════════════════
+// COLUMN DETECTION — flexible header matching
+// ════════════════════════════════════════════════════════
+function detectColumns(headers){
+  const h = headers.map(x => String(x||'').trim().toUpperCase());
+  const find = (patterns) => {
+    for(const p of patterns){
+      const idx = h.findIndex(x => x.includes(p));
+      if(idx !== -1) return idx;
+    }
+    return -1;
+  };
+  return {
+    name:      find(['ITEM NAME','DESCRIPTION','ITEM','NAME','PRODUCT']),
+    onhand:    find(['ON HAND','ONHAND','QTY ON HAND','QUANTITY ON HAND','STOCK','QTY']),
+    available: find(['AVAILABLE','AVAIL']),
+    committed: find(['COMMITTED','COMMIT','RESERVED']),
+    status:    find(['STATUS','LOCATION','STATUS LOCATION','CLASSIFICATION','CATEGORY STATUS'])
+  };
+}
 
-const DESKTOP_ITEMS = ALL_ITEMS.filter(x => /PROCESSOR|RYZEN|CORE I[3579]|CORE ULTRA|DDR[45]|\bRAM\b|KF432|M\.2 SSD|NVME|SATA SSD|RTX|GTX|VIDEOCARD|H610|B760|H810|A520|B550|H510|CASING|CASE.*PSU|W\/.*PSU|CX750|CX550|CORSAIR.*W|COOLER|HEATSINK|DEEPCOOL|DARKFLASH.*COOL/i.test(x['Item Name']));
+// STATUS normalisation
+function normaliseStatus(raw){
+  if(!raw) return 'COMMON ITEM FAST MOVING';
+  const s = String(raw).toUpperCase().trim();
+  if(s.includes('AGING') || s.includes('SLOW')) return 'AGING ITEM';
+  if(s.includes('CONSIGN')) return 'CONSIGNMENT';
+  if(s.includes('FAST') || s.includes('COMMON')) return 'COMMON ITEM FAST MOVING';
+  return s || 'COMMON ITEM FAST MOVING';
+}
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// EXCEL PARSER — multi-sheet aware
+// ════════════════════════════════════════════════════════
+function parseWorkbook(wb){
+  const sheetNames = wb.SheetNames;
+
+  // Strategy 1: find a sheet whose name contains obvious keywords
+  const invKeywords = /inventory|items?|stock|product|current|latest|sku/i;
+  let targetSheet = sheetNames.find(n => invKeywords.test(n));
+
+  // Strategy 2: if multiple sheets, prefer the LAST one (most recent)
+  if(!targetSheet) targetSheet = sheetNames[sheetNames.length - 1];
+
+  const ws = wb.Sheets[targetSheet];
+  // Convert to array of arrays (raw, no headers)
+  const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+  // Find the header row (first row that has "name" and a qty-like column)
+  let headerRowIdx = -1;
+  let cols = null;
+  for(let i = 0; i < Math.min(20, raw.length); i++){
+    const row = raw[i];
+    if(!row || row.length < 2) continue;
+    const attempt = detectColumns(row);
+    if(attempt.name !== -1 && (attempt.onhand !== -1 || attempt.available !== -1)){
+      headerRowIdx = i;
+      cols = attempt;
+      break;
+    }
+  }
+
+  if(headerRowIdx === -1 || !cols){
+    throw new Error(`Could not find inventory columns.\nExpected headers like: "Item Name", "On Hand", "Available", "Status".\nSheet used: "${targetSheet}".\nPlease check the file format.`);
+  }
+
+  const items = [];
+  for(let i = headerRowIdx + 1; i < raw.length; i++){
+    const row = raw[i];
+    if(!row || !row[cols.name]) continue;
+    const name = String(row[cols.name]).trim();
+    if(!name || name.toUpperCase() === 'TOTAL' || name.toUpperCase() === 'GRAND TOTAL') continue;
+
+    const onhand    = parseInt(cols.onhand    !== -1 ? row[cols.onhand]    : 0) || 0;
+    const available = parseInt(cols.available !== -1 ? row[cols.available] : onhand) || 0;
+    const committed = parseInt(cols.committed !== -1 ? row[cols.committed] : 0) || 0;
+    const status    = normaliseStatus(cols.status !== -1 ? row[cols.status] : '');
+
+    items.push({
+      'Item Name': name,
+      'On Hand': onhand,
+      'Available': available,
+      'Committed': committed,
+      'STATUS LOCATION': status
+    });
+  }
+
+  if(items.length === 0){
+    throw new Error(`No data rows found after the header row.\nSheet: "${targetSheet}". Please verify the file.`);
+  }
+
+  // Build simple trend data from upload: just 1 point (current)
+  const trends = {};
+  items.slice(0,40).forEach(it => {
+    trends[it['Item Name']] = [it['On Hand']];
+  });
+
+  const now = new Date();
+  const label = now.toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+  const labelFull = now.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+
+  return {items, trends, label, labelFull, sheetName: targetSheet};
+}
+
+// ════════════════════════════════════════════════════════
+// APPLY UPLOADED DATA & REFRESH DASHBOARD
+// ════════════════════════════════════════════════════════
+function applyUploadedData(parsed, filename){
+  ALL_ITEMS    = parsed.items;
+  DATA_SOURCE  = 'uploaded';
+  LAST_UPLOAD_NAME = filename;
+
+  // For trends: if previously had built-in, append new snapshot
+  // Otherwise start fresh with the new data
+  const newTrends = {};
+  parsed.items.slice(0,40).forEach(it => {
+    const key = it['Item Name'];
+    if(TRENDS_DATA[key] && DATA_SOURCE !== 'uploaded_fresh'){
+      newTrends[key] = [...(TRENDS_DATA[key] || []).slice(-5), it['On Hand']];
+    } else {
+      newTrends[key] = [it['On Hand']];
+    }
+  });
+  TRENDS_DATA = newTrends;
+
+  // Keep existing labels + add new snapshot label
+  const existing = TREND_LABELS.slice(-5);
+  TREND_LABELS      = [...existing, parsed.label];
+  TREND_LABELS_FULL = [...TREND_LABELS_FULL.slice(-5), parsed.labelFull];
+
+  // Update dashboard banner
+  const banner = document.getElementById('data-source-banner');
+  const dsbText = document.getElementById('dsb-text');
+  if(banner){
+    banner.classList.remove('default');
+    dsbText.innerHTML = `Live data from <strong>${filename}</strong> — ${parsed.items.length} SKUs loaded`;
+    banner.querySelector('.dsb-tag').textContent = 'LIVE';
+  }
+
+  // Update sub-title
+  const sub = document.getElementById('dash-location-sub');
+  if(sub) sub.textContent = `ONLY@PC GILMORE · Updated ${parsed.labelFull}`;
+
+  // Refresh all dashboard components
+  refreshDashboardFromData();
+}
+
+function refreshDashboardFromData(){
+  // Destroy old charts
+  [dashTrendChart, catChartInst, fullTrendChartInst, statusDonutChart].forEach(c=>{
+    try{if(c)c.destroy()}catch(e){}
+  });
+  dashTrendChart = catChartInst = fullTrendChartInst = statusDonutChart = null;
+
+  // Clear panels
+  document.getElementById('critical-panel').innerHTML = '';
+  document.getElementById('low-panel').innerHTML = '';
+
+  initDashboard();
+
+  // If inventory page is visible, re-render it
+  if(document.getElementById('page-inventory').classList.contains('active')){
+    renderInvTable(ALL_ITEMS);
+  }
+  if(document.getElementById('page-desktop').classList.contains('active')){
+    renderDeskTable(getDesktopItems());
+  }
+  if(document.getElementById('page-trends').classList.contains('active')){
+    initFullTrends();
+  }
+}
+
+// ════════════════════════════════════════════════════════
 // STATE
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 const USERS = {
   joseph:{pass:'admin123',role:'ADMIN',name:'Joseph',display:'President'},
   diane: {pass:'staff123',role:'STAFF',name:'Diane', display:'Inventory Staff'}
@@ -821,9 +979,9 @@ const USERS = {
 let currentUser=null, dashTrendChart=null, catChartInst=null, fullTrendChartInst=null, statusDonutChart=null;
 let modalDataset=[];
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // CLOCK
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function tick(){
   const t=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const c=document.getElementById('clock');
@@ -833,9 +991,9 @@ function tick(){
 }
 setInterval(tick,1000);tick();
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // LOGIN / LOGOUT
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function doLogin(){
   const u=document.getElementById('login-user').value.trim().toLowerCase();
   const p=document.getElementById('login-pass').value;
@@ -846,23 +1004,19 @@ function doLogin(){
   currentUser={username:u,...user};
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='flex';
-  // User chip
   document.getElementById('user-name-display').textContent=user.name;
   document.getElementById('user-role-display').textContent=user.display;
   const av=document.getElementById('user-avatar');
   av.textContent=user.name[0];
   av.className='user-avatar '+(user.role==='ADMIN'?'avatar-admin':'avatar-staff');
-  // Drawer
   document.getElementById('drawer-av').textContent=user.name[0];
   document.getElementById('drawer-av').className='drawer-av '+(user.role==='ADMIN'?'avatar-admin':'avatar-staff');
   document.getElementById('drawer-uname').textContent=user.name;
   document.getElementById('drawer-urole').textContent=user.display;
   if(user.role==='STAFF'){
-    document.getElementById('topbar').style.display='flex'; // keep topbar for brand
     document.getElementById('admin-pages').style.display='none';
     document.getElementById('bottom-nav').style.display='none';
-    const up=document.getElementById('upload-page');
-    up.style.display='block';
+    document.getElementById('upload-page').style.display='block';
     renderUploadHistory();
   } else {
     document.getElementById('admin-pages').style.display='block';
@@ -881,9 +1035,9 @@ function doLogout(){
   document.getElementById('login-pass').value='';
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // SIDEBAR
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function openSidebar(){
   document.getElementById('sidebar-drawer').classList.add('open');
   document.getElementById('sidebar-overlay').classList.add('open');
@@ -893,47 +1047,48 @@ function closeSidebar(){
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // NAVIGATION
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function showPage(id,btn,fromDrawer){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  // Desktop nav buttons
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  // Bottom nav buttons
   document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
-  // Drawer nav buttons
   document.querySelectorAll('.drawer-nav-btn').forEach(b=>b.classList.remove('active'));
   const page=document.getElementById('page-'+id);
   if(page)page.classList.add('active');
   if(btn){
     btn.classList.add('active');
-    // Sync bottom nav
     const bnav=document.getElementById('bnav-'+id);
     if(bnav)bnav.classList.add('active');
   }
   if(fromDrawer)closeSidebar();
   if(id==='inventory')renderInvTable(ALL_ITEMS);
-  if(id==='desktop')renderDeskTable(DESKTOP_ITEMS);
+  if(id==='desktop')renderDeskTable(getDesktopItems());
   if(id==='trends')initFullTrends();
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // AI STOCK INTELLIGENCE
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function generateInsights(){
   const fast=ALL_ITEMS.filter(x=>(x['STATUS LOCATION']||'').includes('FAST MOVING'));
   const aging=ALL_ITEMS.filter(x=>(x['STATUS LOCATION']||'').includes('AGING'));
   const out=fast.filter(x=>x['On Hand']===0);
   const critical=fast.filter(x=>x['On Hand']>0&&x['On Hand']<=3);
-  const lowFive=fast.filter(x=>x['On Hand']>0&&x['On Hand']<=5);
   const totalUnits=ALL_ITEMS.reduce((s,x)=>s+(x['On Hand']||0),0);
   const agingUnits=aging.reduce((s,x)=>s+(x['On Hand']||0),0);
-  const agingPct=((agingUnits/totalUnits)*100).toFixed(0);
+  const agingPct=totalUnits>0?((agingUnits/totalUnits)*100).toFixed(0):0;
 
-  // Velocity analysis from trends
+  // Top SKU by on-hand
+  const topItem = ALL_ITEMS.slice().sort((a,b)=>(b['On Hand']||0)-(a['On Hand']||0))[0];
+
+  // Highest committed fast-mover (demand pressure)
+  const highCommit = fast.slice().sort((a,b)=>(b['Committed']||0)-(a['Committed']||0))[0];
+
+  // Velocity analysis
   const velocities=[];
-  Object.entries(TRENDS_2026).forEach(([name,vals])=>{
+  Object.entries(TRENDS_DATA).forEach(([name,vals])=>{
     if(vals.length>=2){
       const diff=vals[0]-vals[vals.length-1];
       if(diff>0)velocities.push({name,sold:diff,current:vals[vals.length-1]});
@@ -942,46 +1097,33 @@ function generateInsights(){
   velocities.sort((a,b)=>b.sold-a.sold);
   const topVel=velocities[0];
 
-  // Lexar DDR4 burn rate
-  const lexarTrend=TRENDS_2026['LEXAR 8GB 2666 DDR4']||[];
-  const lexarBurn=lexarTrend.length>=2?Math.round((lexarTrend[0]-lexarTrend[lexarTrend.length-1])/lexarTrend.length):0;
-
   return [
     {
-      icon:'🧠',
-      label:'Demand Forecast',
-      color:'var(--accent)',
-      text:`<strong class="ai-accent">LEXAR 8GB DDR4</strong> burning ~<strong class="ai-accent">${lexarBurn} units/snapshot</strong>. At current rate, stock-out in <strong class="ai-accent">~${Math.ceil((lexarTrend[lexarTrend.length-1]||77)/lexarBurn)} periods</strong>. Reorder now.`
+      icon:'⚠️',label:'Restock Priority',color:'var(--yellow)',
+      text:`<strong class="ai-yellow">${out.length} SKUs</strong> are out of stock. <strong class="ai-yellow">${critical.length}</strong> fast-moving items at ≤3 units. ${highCommit?`High demand: <strong class="ai-yellow">${highCommit['Item Name']}</strong> (${highCommit['Committed']} committed).`:''}`
     },
     {
-      icon:'⚠️',
-      label:'Restock Priority',
-      color:'var(--yellow)',
-      text:`<strong class="ai-yellow">${out.length} SKUs</strong> are out of stock. <strong class="ai-yellow">${critical.length}</strong> fast-moving items have ≤3 units. Top priority: <strong class="ai-yellow">NVMe SSDs, Windows licenses, monitors</strong>.`
+      icon:'📦',label:'Aging Stock Alert',color:'var(--orange)',
+      text:`<strong style="color:var(--orange)">${agingPct}%</strong> of units (<strong style="color:var(--orange)">${agingUnits.toLocaleString()}</strong>) are aging. <strong style="color:var(--orange)">${aging.length} SKUs</strong> need attention. Consider bundle promos or markdown pricing.`
     },
     {
-      icon:'📦',
-      label:'Aging Stock Alert',
-      color:'var(--orange)',
-      text:`<strong style="color:var(--orange)">${agingPct}%</strong> of total units (<strong style="color:var(--orange)">${agingUnits.toLocaleString()}</strong>) are aging. <strong style="color:var(--orange)">${aging.length} SKUs</strong> at risk. Consider bundle promos or markdown pricing.`
+      icon:'🏆',label:'Top Velocity SKU',color:'var(--green)',
+      text:topVel?`<strong class="ai-green">${topVel.name}</strong> dropped <strong class="ai-green">${topVel.sold} units</strong> since first tracked. Current stock: <strong class="ai-green">${topVel.current} units</strong>. Monitor closely.`
+        :`<strong class="ai-green">${topItem?topItem['Item Name']:'—'}</strong> leads with <strong class="ai-green">${topItem?topItem['On Hand']:0} units</strong> on hand.`
     },
     {
-      icon:'🏆',
-      label:'Top Velocity SKU',
-      color:'var(--green)',
-      text:topVel?`<strong class="ai-green">${topVel.name}</strong> sold <strong class="ai-green">${topVel.sold} units</strong> since Jan 10, 2026. Current stock: <strong class="ai-green">${topVel.current} units</strong>. Monitor closely.`:`Stock velocity data loading...`
+      icon:'💡',label:'Health Score',color:'var(--cyan)',
+      text:`<strong class="ai-accent">${fast.length} fast-moving</strong> vs <strong style="color:var(--yellow)">${aging.length} aging</strong> SKUs. Fast ratio: <strong class="ai-accent">${fast.length+aging.length>0?((fast.length/(fast.length+aging.length))*100).toFixed(0):0}%</strong>. Total on-hand: <strong class="ai-accent">${totalUnits.toLocaleString()} units</strong>.`
     },
     {
-      icon:'💡',
-      label:'Health Score',
-      color:'var(--cyan)',
-      text:`Overall inventory health: <strong class="ai-accent">${fast.length} fast-moving</strong> vs <strong style="color:var(--yellow)">${aging.length} aging</strong> SKUs. Fast-moving ratio: <strong class="ai-accent">${((fast.length/(fast.length+aging.length))*100).toFixed(0)}%</strong>. Inventory is ${parseInt(agingPct)>50?'<strong class="ai-yellow">aging-heavy — action needed</strong>':'<strong class="ai-green">in good shape</strong>'}.`
+      icon:'🖥️',label:'Desktop Intelligence',color:'var(--purple)',
+      text:`Desktop parts: <strong style="color:var(--purple)">${getDesktopItems().length} SKUs</strong> tracked. ${topItem&&/DDR|RAM|PROCESSOR|RTX|GPU/i.test(topItem['Item Name'])?`Top desktop SKU: <strong style="color:var(--purple)">${topItem['Item Name']} (${topItem['On Hand']} units)</strong>.`:'Consignment GPUs and processors in stock.'}`
     },
     {
-      icon:'🖥️',
-      label:'Desktop Intelligence',
-      color:'var(--purple)',
-      text:`Desktop parts: <strong style="color:var(--purple)">${DESKTOP_ITEMS.length} SKUs</strong> tracked. RAM supply led by <strong style="color:var(--purple)">Lexar DDR4 (77u)</strong>. Intel Core Ultra 5 225 at <strong style="color:var(--purple)">18 units</strong> — new demand driver. GPU consignment healthy.`
+      icon:'📊',label:'Data Source',color:'var(--accent)',
+      text: DATA_SOURCE==='uploaded'
+        ? `<strong class="ai-accent">Live upload active</strong> — <strong class="ai-accent">${ALL_ITEMS.length} SKUs</strong> from <strong class="ai-accent">${LAST_UPLOAD_NAME}</strong>. Dashboard reflects current POS data.`
+        : `<strong class="ai-accent">Built-in snapshot</strong> (Mar 3, 2026). Ask Diane to upload the latest POS export to refresh live data.`
     }
   ];
 }
@@ -1004,9 +1146,9 @@ function refreshInsights(){
   setTimeout(()=>{renderInsights();grid.style.opacity='1';},400);
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // STATUS BREAKDOWN DONUT
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function initStatusBreakdown(){
   const fast=ALL_ITEMS.filter(x=>(x['STATUS LOCATION']||'').includes('FAST MOVING'));
   const aging=ALL_ITEMS.filter(x=>(x['STATUS LOCATION']||'').includes('AGING'));
@@ -1014,10 +1156,10 @@ function initStatusBreakdown(){
   const other=ALL_ITEMS.filter(x=>!fast.includes(x)&&!aging.includes(x)&&!consign.includes(x));
 
   const data=[
-    {label:'Fast Moving', count:fast.length,  units:fast.reduce((s,x)=>s+(x['On Hand']||0),0),   color:'#10b981'},
-    {label:'Aging',       count:aging.length,  units:aging.reduce((s,x)=>s+(x['On Hand']||0),0),  color:'#f59e0b'},
-    {label:'Consignment', count:consign.length,units:consign.reduce((s,x)=>s+(x['On Hand']||0),0),color:'#8b5cf6'},
-    {label:'Other',       count:other.length,  units:other.reduce((s,x)=>s+(x['On Hand']||0),0),  color:'#4b6080'},
+    {label:'Fast Moving',count:fast.length,  units:fast.reduce((s,x)=>s+(x['On Hand']||0),0),   color:'#10b981'},
+    {label:'Aging',      count:aging.length,  units:aging.reduce((s,x)=>s+(x['On Hand']||0),0),  color:'#f59e0b'},
+    {label:'Consignment',count:consign.length,units:consign.reduce((s,x)=>s+(x['On Hand']||0),0),color:'#8b5cf6'},
+    {label:'Other',      count:other.length,  units:other.reduce((s,x)=>s+(x['On Hand']||0),0),  color:'#4b6080'},
   ].filter(d=>d.count>0);
 
   const total=data.reduce((s,d)=>s+d.count,0);
@@ -1029,29 +1171,11 @@ function initStatusBreakdown(){
   const ctx=document.getElementById('statusDonutChart').getContext('2d');
   statusDonutChart=new Chart(ctx,{
     type:'doughnut',
-    data:{
-      labels:data.map(d=>d.label),
-      datasets:[{
-        data:data.map(d=>d.count),
-        backgroundColor:data.map(d=>d.color+'22'),
-        borderColor:data.map(d=>d.color),
-        borderWidth:2,hoverOffset:6
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,cutout:'68%',
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,
-          callbacks:{label:i=>`${i.label}: ${i.raw} SKUs (${((i.raw/total)*100).toFixed(0)}%)`}
-        }
-      }
-    }
+    data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.count),backgroundColor:data.map(d=>d.color+'22'),borderColor:data.map(d=>d.color),borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,callbacks:{label:i=>`${i.label}: ${i.raw} SKUs (${((i.raw/total)*100).toFixed(0)}%)`}}}}
   });
 
-  const leg=document.getElementById('status-legend');
-  leg.innerHTML=data.map(d=>`
+  document.getElementById('status-legend').innerHTML=data.map(d=>`
     <div class="legend-row">
       <div class="legend-dot" style="background:${d.color}"></div>
       <div class="legend-name">${d.label}</div>
@@ -1060,9 +1184,9 @@ function initStatusBreakdown(){
     </div>`).join('');
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // INIT DASHBOARD
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function initDashboard(){
   renderInsights();
   const fast=ALL_ITEMS.filter(x=>(x['STATUS LOCATION']||'').includes('FAST MOVING'));
@@ -1077,12 +1201,13 @@ function initDashboard(){
   document.getElementById('out-badge').textContent=out.length;
   document.getElementById('low-badge').textContent=restock.filter(x=>x['On Hand']>0).length;
 
-  // Alerts
   const cp=document.getElementById('critical-panel');
+  cp.innerHTML='';
   if(!out.length)cp.innerHTML=`<div style="color:var(--text3);padding:10px;font-size:12px">✓ No out-of-stock fast-movers</div>`;
   else out.slice(0,15).forEach(i=>{cp.innerHTML+=`<div class="alert-row alert-critical"><span class="alert-name">${i['Item Name']}</span><span class="alert-qty" style="color:var(--red)">0</span></div>`;});
 
   const lp=document.getElementById('low-panel');
+  lp.innerHTML='';
   restock.filter(x=>x['On Hand']>0).slice(0,15).forEach(i=>{lp.innerHTML+=`<div class="alert-row alert-low"><span class="alert-name">${i['Item Name']}</span><span class="alert-qty" style="color:var(--yellow)">${i['On Hand']}</span></div>`;});
 
   initStatusBreakdown();
@@ -1090,11 +1215,11 @@ function initDashboard(){
   initCatChart();
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // TREND PILLS + CHART
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function initTrendPills(){
-  const keys=Object.keys(TRENDS_2026);
+  const keys=Object.keys(TRENDS_DATA);
   const pp=document.getElementById('dash-trend-pills');
   pp.innerHTML='';
   keys.slice(0,15).forEach((k,i)=>{
@@ -1112,46 +1237,21 @@ function initTrendPills(){
 }
 
 function updateDashTrend(item){
-  const data=TRENDS_2026[item]||[];
+  const data=TRENDS_DATA[item]||[];
+  const labels = TREND_LABELS.slice(-data.length);
+  const labelsFull = TREND_LABELS_FULL.slice(-data.length);
   if(dashTrendChart)dashTrendChart.destroy();
   const ctx=document.getElementById('dashTrendChart').getContext('2d');
   dashTrendChart=new Chart(ctx,{
     type:'line',
-    data:{
-      labels:DATE_LABELS_2026,
-      datasets:[{
-        label:'On Hand',data,
-        borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,0.07)',
-        borderWidth:2,
-        pointRadius:data.map(v=>v===0?5:3),
-        pointBackgroundColor:data.map(v=>v===0?'#ef4444':v<=3?'#f59e0b':'#06b6d4'),
-        tension:0.35,fill:true
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,
-          titleColor:'#06b6d4',bodyColor:'#e2e8f0',
-          callbacks:{
-            title:items=>DATE_FULL_2026[items[0].dataIndex]||'',
-            label:i=>` On Hand: ${i.raw}`
-          }
-        }
-      },
-      scales:{
-        x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9},maxTicksLimit:6},grid:{color:'rgba(31,45,61,0.5)'}},
-        y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'},min:0}
-      }
-    }
+    data:{labels,datasets:[{label:'On Hand',data,borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,0.07)',borderWidth:2,pointRadius:data.map(v=>v===0?5:3),pointBackgroundColor:data.map(v=>v===0?'#ef4444':v<=3?'#f59e0b':'#06b6d4'),tension:0.35,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,titleColor:'#06b6d4',bodyColor:'#e2e8f0',callbacks:{title:items=>labelsFull[items[0].dataIndex]||'',label:i=>` On Hand: ${i.raw}`}}},scales:{x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9},maxTicksLimit:6},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}
   });
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // CATEGORY CHART
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function initCatChart(){
   const cats={
     'Processors':ALL_ITEMS.filter(x=>/PROCESSOR|RYZEN|CORE I[3579]|CORE ULTRA/i.test(x['Item Name'])),
@@ -1160,41 +1260,23 @@ function initCatChart(){
     'GPU':ALL_ITEMS.filter(x=>/RTX|GTX|VIDEOCARD|RADEON/i.test(x['Item Name'])),
     'Motherboard':ALL_ITEMS.filter(x=>/H610|B760|Z790|A520|B550|H510|H810|MOBO/i.test(x['Item Name'])),
     'Case/PSU':ALL_ITEMS.filter(x=>/CASING|CASE.*PSU|W\/.*PSU|POWERSUPPLY/i.test(x['Item Name'])),
-    'Laptops':ALL_ITEMS.filter(x=>/LAPTOP|NOTEBOOK/i.test(x['Item Name'])),
-    'Monitors':ALL_ITEMS.filter(x=>/MONITOR|\d+".*IPS|\d+".*LED|MONITOR/i.test(x['Item Name'])),
+    'Monitors':ALL_ITEMS.filter(x=>/MONITOR|\d+".*IPS|\d+".*LED/i.test(x['Item Name'])),
     'Networking':ALL_ITEMS.filter(x=>/ROUTER|SWITCH HUB|CAT[56].*CABLE|UTP CABLE/i.test(x['Item Name'])),
     'Peripherals':ALL_ITEMS.filter(x=>/KEYBOARD|MOUSE|HEADSET|HEADPHONE|WEBCAM/i.test(x['Item Name'])),
+    'Cables':ALL_ITEMS.filter(x=>/CABLE|CONNECTOR|ADAPTER|COUPLER/i.test(x['Item Name'])),
   };
-  const colors=['#3b82f6','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#6366f1'];
-  const catArr=Object.entries(cats).map(([n,items],i)=>({
-    name:n,total:items.reduce((s,x)=>s+(x['On Hand']||0),0),skus:items.length,color:colors[i]
-  })).sort((a,b)=>b.total-a.total);
+  const colors=['#3b82f6','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ef4444','#14b8a6','#f97316','#ec4899','#6366f1'];
+  const catArr=Object.entries(cats).map(([n,items],i)=>({name:n,total:items.reduce((s,x)=>s+(x['On Hand']||0),0),skus:items.length,color:colors[i]})).sort((a,b)=>b.total-a.total);
 
   if(catChartInst)catChartInst.destroy();
   const ctx=document.getElementById('catChart').getContext('2d');
   catChartInst=new Chart(ctx,{
     type:'bar',
-    data:{
-      labels:catArr.map(c=>c.name),
-      datasets:[{
-        data:catArr.map(c=>c.total),
-        backgroundColor:catArr.map(c=>c.color+'25'),
-        borderColor:catArr.map(c=>c.color),
-        borderWidth:1.5,borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,titleColor:'#e2e8f0',bodyColor:'#06b6d4'}},
-      scales:{
-        x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:8},maxRotation:35},grid:{display:false}},
-        y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'}}
-      }
-    }
+    data:{labels:catArr.map(c=>c.name),datasets:[{data:catArr.map(c=>c.total),backgroundColor:catArr.map(c=>c.color+'25'),borderColor:catArr.map(c=>c.color),borderWidth:1.5,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1}},scales:{x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:8},maxRotation:35},grid:{display:false}},y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'}}}}
   });
-  const maxT=Math.max(...catArr.map(c=>c.total));
-  const div=document.getElementById('cat-bars-div');
-  div.innerHTML=catArr.map(c=>`
+  const maxT=Math.max(...catArr.map(c=>c.total),1);
+  document.getElementById('cat-bars-div').innerHTML=catArr.map(c=>`
     <div class="cat-row">
       <span class="cat-lbl">${c.name}</span>
       <div class="cat-track"><div class="cat-fill" style="width:${c.total/maxT*100}%;background:${c.color}"></div></div>
@@ -1202,9 +1284,9 @@ function initCatChart(){
     </div>`).join('');
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // TABLE HELPERS
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function statusBadge(s){
   if(!s)return '';
   if(s.includes('FAST'))return '<span class="badge badge-fast">FAST</span>';
@@ -1234,9 +1316,9 @@ function tableRow(item,maxV){
   </tr>`;
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // INV TABLE
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function renderInvTable(data){
   const maxV=Math.max(...data.map(x=>x['On Hand']||0),1);
   document.getElementById('inv-tbody').innerHTML=data.slice(0,250).map(i=>tableRow(i,maxV)).join('');
@@ -1251,23 +1333,23 @@ function filterInvTable(){
   renderInvTable(d);
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // DESKTOP TABLE
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function renderDeskTable(data){
   const maxV=Math.max(...data.map(x=>x['On Hand']||0),1);
   document.getElementById('desk-tbody').innerHTML=data.map(i=>tableRow(i,maxV)).join('');
 }
 function filterDeskTable(){
   const q=document.getElementById('desk-search').value.toLowerCase();
-  renderDeskTable(DESKTOP_ITEMS.filter(x=>x['Item Name'].toLowerCase().includes(q)));
+  renderDeskTable(getDesktopItems().filter(x=>x['Item Name'].toLowerCase().includes(q)));
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // FULL TRENDS
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function initFullTrends(){
-  const keys=Object.keys(TRENDS_2026);
+  const keys=Object.keys(TRENDS_DATA);
   const pp=document.getElementById('trends-pills');
   pp.innerHTML='';
   keys.forEach((k,i)=>{
@@ -1284,45 +1366,21 @@ function initFullTrends(){
   if(keys.length)updateFullTrend(keys[0]);
 }
 function updateFullTrend(item){
-  const data=TRENDS_2026[item]||[];
+  const data=TRENDS_DATA[item]||[];
+  const labels=TREND_LABELS.slice(-data.length);
+  const labelsFull=TREND_LABELS_FULL.slice(-data.length);
   if(fullTrendChartInst)fullTrendChartInst.destroy();
   const ctx=document.getElementById('fullTrendChart').getContext('2d');
   fullTrendChartInst=new Chart(ctx,{
     type:'line',
-    data:{
-      labels:DATE_LABELS_2026,
-      datasets:[{
-        label:'On Hand',data,
-        borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.07)',
-        borderWidth:2.5,pointRadius:5,
-        pointBackgroundColor:data.map(v=>v===0?'#ef4444':v<=3?'#f59e0b':'#8b5cf6'),
-        tension:0.3,fill:true
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,
-          titleColor:'#8b5cf6',bodyColor:'#e2e8f0',
-          callbacks:{
-            title:items=>DATE_FULL_2026[items[0].dataIndex]||'',
-            label:i=>` On Hand: ${i.raw}`
-          }
-        }
-      },
-      scales:{
-        x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9},maxRotation:30},grid:{color:'rgba(31,45,61,0.5)'}},
-        y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'},min:0}
-      }
-    }
+    data:{labels,datasets:[{label:'On Hand',data,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.07)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:data.map(v=>v===0?'#ef4444':v<=3?'#f59e0b':'#8b5cf6'),tension:0.3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'#1f2d3d',borderWidth:1,titleColor:'#8b5cf6',bodyColor:'#e2e8f0',callbacks:{title:items=>labelsFull[items[0].dataIndex]||'',label:i=>` On Hand: ${i.raw}`}}},scales:{x:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9},maxRotation:30},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4b6080',font:{family:'JetBrains Mono',size:9}},grid:{color:'rgba(31,45,61,0.5)'},min:0}}}
   });
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // KPI MODAL
-// ════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 const KPI_CONFIG={
   all:{title:'📦 All Inventory',sub:'Complete SKU list',
     filter:items=>items,
@@ -1347,11 +1405,7 @@ function openKPIModal(type){
   document.getElementById('modal-search-input').value='';
   document.getElementById('modal-sort').value='onhand-desc';
   const stats=cfg.stats(filtered);
-  document.getElementById('modal-stats').innerHTML=stats.map(s=>`
-    <div class="modal-stat">
-      <div class="modal-stat-val" style="color:${s.color}">${s.val.toLocaleString()}</div>
-      <div class="modal-stat-lbl">${s.lbl}</div>
-    </div>`).join('');
+  document.getElementById('modal-stats').innerHTML=stats.map(s=>`<div class="modal-stat"><div class="modal-stat-val" style="color:${s.color}">${s.val.toLocaleString()}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
   renderModalTable(filtered);
   document.getElementById('kpi-modal').classList.add('open');
 }
@@ -1373,15 +1427,18 @@ function filterModalTable(){
 document.getElementById('kpi-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-// ════════════════════════════════════════
-// DIANE UPLOAD
-// ════════════════════════════════════════
-let selectedFile=null;
+// ════════════════════════════════════════════════════════
+// DIANE UPLOAD — now with REAL Excel parsing
+// ════════════════════════════════════════════════════════
+let selectedFile = null;
+let parsedData   = null;
+
 const uploadHistory=[
   {file:'inventory_2-28-26.xlsx',time:'Feb 28, 2026 — 9:14 AM'},
   {file:'inventory_2-21-26.xlsx',time:'Feb 21, 2026 — 9:02 AM'},
   {file:'inventory_2-14-26.xlsx',time:'Feb 14, 2026 — 9:31 AM'},
 ];
+
 function renderUploadHistory(){
   const el=document.getElementById('upload-history-list');
   el.innerHTML=uploadHistory.map(h=>`
@@ -1391,38 +1448,131 @@ function renderUploadHistory(){
       <span class="history-time">${h.time}</span>
     </div>`).join('');
 }
+
 function triggerFile(){document.getElementById('file-input').click();}
 function handleDragOver(e){e.preventDefault();document.getElementById('dropzone').classList.add('dragover')}
 function handleDragLeave(){document.getElementById('dropzone').classList.remove('dragover')}
 function handleDrop(e){e.preventDefault();document.getElementById('dropzone').classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)setFile(f);}
 function handleFileSelect(input){if(input.files[0])setFile(input.files[0]);}
+
 function setFile(f){
-  selectedFile=f;
+  selectedFile = f;
+  parsedData   = null;
+  hideUploadError();
   document.getElementById('dz-icon').textContent='📄';
   document.getElementById('dz-text').textContent=f.name;
   document.getElementById('dz-sub').textContent=`${(f.size/1024).toFixed(1)} KB — ready to upload`;
   document.getElementById('upload-btn').classList.add('visible');
 }
+
+function showUploadError(msg){
+  const box = document.getElementById('upload-error-box');
+  box.style.display = 'block';
+  box.innerHTML = '❌ ' + msg.replace(/\n/g,'<br>');
+}
+function hideUploadError(){
+  document.getElementById('upload-error-box').style.display = 'none';
+}
+
+function setStep(n, state){
+  const el = document.getElementById('step'+n+'-icon');
+  if(state==='active'){el.className='step-icon step-active';el.textContent='↻';}
+  else if(state==='done'){el.className='step-icon step-done';el.textContent='✓';}
+  else{el.className='step-icon step-pending';el.textContent=n;}
+}
+
 function startUpload(){
   if(!selectedFile)return;
+  hideUploadError();
   document.getElementById('upload-btn').style.display='none';
   document.getElementById('upload-progress').style.display='block';
-  const steps=['step1','step2','step3','step4'];
-  const delays=[600,1200,1800,2400];
-  steps.forEach((s,i)=>{
-    setTimeout(()=>{const el=document.getElementById(s+'-icon');el.className='step-icon step-active';el.textContent='↻';},delays[i]);
-    setTimeout(()=>{const el=document.getElementById(s+'-icon');el.className='step-icon step-done';el.textContent='✓';},delays[i]+500);
-  });
-  setTimeout(()=>{
+
+  setStep(1,'active');
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    setStep(1,'done');
+    setStep(2,'active');
+
+    setTimeout(()=>{
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, {type:'array'});
+
+        setStep(2,'done');
+        setStep(3,'active');
+
+        setTimeout(()=>{
+          try{
+            parsedData = parseWorkbook(wb);
+            setStep(3,'done');
+            setStep(4,'active');
+
+            setTimeout(()=>{
+              // APPLY to dashboard
+              applyUploadedData(parsedData, selectedFile.name);
+              setStep(4,'done');
+
+              setTimeout(()=>{
+                document.getElementById('upload-progress').style.display='none';
+                document.getElementById('upload-success').style.display='block';
+
+                // Show parse summary
+                const summary = document.getElementById('upload-parse-summary');
+                const fast=parsedData.items.filter(x=>(x['STATUS LOCATION']||'').includes('FAST')).length;
+                const aging=parsedData.items.filter(x=>(x['STATUS LOCATION']||'').includes('AGING')).length;
+                const consign=parsedData.items.filter(x=>(x['STATUS LOCATION']||'').includes('CONSIGN')).length;
+                const total=parsedData.items.reduce((s,x)=>s+(x['On Hand']||0),0);
+                summary.innerHTML=`
+                  <div class="parse-row"><span class="parse-label">📦 Total SKUs loaded</span><span class="parse-value">${parsedData.items.length}</span></div>
+                  <div class="parse-row"><span class="parse-label">⚡ Fast-moving</span><span class="parse-value">${fast}</span></div>
+                  <div class="parse-row"><span class="parse-label">🕰️ Aging items</span><span class="parse-value">${aging}</span></div>
+                  <div class="parse-row"><span class="parse-label">📋 Consignment</span><span class="parse-value">${consign}</span></div>
+                  <div class="parse-row"><span class="parse-label">📊 Total on-hand units</span><span class="parse-value">${total.toLocaleString()}</span></div>
+                  <div class="parse-row"><span class="parse-label">🗂️ Sheet used</span><span class="parse-value" style="font-size:10px">${parsedData.sheetName}</span></div>`;
+
+                // Save to history
+                const now=new Date();
+                uploadHistory.unshift({file:selectedFile.name,time:now.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})+' — '+now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})});
+                renderUploadHistory();
+              },400);
+            },600);
+          }catch(err){
+            setStep(3,'done');
+            setStep(4,'done');
+            document.getElementById('upload-progress').style.display='none';
+            document.getElementById('upload-btn').style.display='block';
+            showUploadError(err.message||'Failed to parse the file. Please check the format.');
+            resetSteps();
+          }
+        },500);
+      }catch(err){
+        document.getElementById('upload-progress').style.display='none';
+        document.getElementById('upload-btn').style.display='block';
+        showUploadError('Could not read file. Make sure it is a valid .xlsx, .xls, or .csv file.');
+        resetSteps();
+      }
+    },400);
+  };
+
+  reader.onerror = function(){
     document.getElementById('upload-progress').style.display='none';
-    document.getElementById('upload-success').style.display='block';
-    const now=new Date();
-    uploadHistory.unshift({file:selectedFile.name,time:now.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})+' — '+now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})});
-    renderUploadHistory();
-  },3200);
+    document.getElementById('upload-btn').style.display='block';
+    showUploadError('File read error. Please try again.');
+    resetSteps();
+  };
+
+  reader.readAsArrayBuffer(selectedFile);
 }
+
+function resetSteps(){
+  [1,2,3,4].forEach(n=>setStep(n,'pending'));
+}
+
 function resetUpload(){
-  selectedFile=null;
+  selectedFile = null;
+  parsedData   = null;
+  hideUploadError();
   document.getElementById('dz-icon').textContent='📂';
   document.getElementById('dz-text').textContent='Tap to select inventory file';
   document.getElementById('dz-sub').textContent='Accepts .xlsx, .xls, .csv';
@@ -1430,10 +1580,8 @@ function resetUpload(){
   document.getElementById('upload-btn').style.display='';
   document.getElementById('upload-success').style.display='none';
   document.getElementById('upload-progress').style.display='none';
-  ['step1','step2','step3','step4'].forEach((s,i)=>{
-    const el=document.getElementById(s+'-icon');
-    el.className='step-icon step-pending';el.textContent=i+1;
-  });
+  document.getElementById('upload-parse-summary').innerHTML='';
+  resetSteps();
   document.getElementById('file-input').value='';
 }
 </script>
